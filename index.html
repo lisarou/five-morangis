@@ -866,9 +866,8 @@
       showToast("Match créé manuellement !");
     }
 
-    function renderMatchs() {
+function renderMatchs() {
       const container = document.getElementById('matchsListContainer');
-      if (!container) return;
       container.innerHTML = '';
 
       if (!appData.matchs || appData.matchs.length === 0) {
@@ -876,13 +875,63 @@
           <div class="bg-white rounded-2xl p-6 text-center border border-slate-200">
             <i class="fa-solid fa-calendar-xmark text-slate-300 text-3xl mb-2"></i>
             <p class="text-sm font-bold text-slate-700">Aucun match programmé</p>
-            <p class="text-xs text-slate-400 mt-0.5">Validez un sondage ou créez un match directement !</p>
+            <p class="text-xs text-slate-400 mt-0.5">Validez le sondage pour planifier une partie !</p>
           </div>
         `;
         return;
       }
 
-      appData.matchs.forEach(match => {
+      // Fonction pour convertir la date texte en valeur numérique pour le tri
+      const parseMatchDate = (m) => {
+        if (m.timestamp) return m.timestamp;
+        
+        const months = {
+          'janvier': 0, 'février': 1, 'fevrier': 1, 'mars': 2, 'avril': 3, 'mai': 4, 'juin': 5,
+          'juillet': 6, 'août': 7, 'aout': 7, 'septembre': 8, 'octobre': 9, 'novembre': 10, 'décembre': 11, 'decembre': 11
+        };
+
+        const str = (m.dateDisplay || '').toLowerCase();
+        const now = new Date();
+
+        // Gestion des mots-clés relatifs
+        if (str.includes('aujourd\'hui') || str.includes('ce soir')) return now.getTime();
+        if (str.includes('demain')) return now.getTime() + 86400000;
+        if (str.includes('prochain')) return now.getTime() + 86400000 * 3;
+
+        // Extraction du jour, mois, heure (ex: "Mardi 14 Octobre" à "19h30")
+        const dayMatch = str.match(/\d+/);
+        const day = dayMatch ? parseInt(dayMatch[0]) : now.getDate();
+        
+        let month = now.getMonth();
+        for (const [key, val] of Object.entries(months)) {
+          if (str.includes(key)) {
+            month = val;
+            break;
+          }
+        }
+
+        let hours = 20, minutes = 0;
+        if (m.timeDisplay) {
+          const timeMatch = m.timeDisplay.match(/(\d+)h?(\d*)/i);
+          if (timeMatch) {
+            hours = parseInt(timeMatch[1]) || 20;
+            minutes = parseInt(timeMatch[2]) || 0;
+          }
+        }
+
+        let year = now.getFullYear();
+        // Si le mois est déjà passé dans l'année, on bascule sur l'année suivante
+        if (month < now.getMonth() || (month === now.getMonth() && day < now.getDate())) {
+          year++;
+        }
+
+        return new Date(year, month, day, hours, minutes).getTime();
+      };
+
+      // Tri chronologique des matchs
+      const sortedMatchs = [...appData.matchs].sort((a, b) => parseMatchDate(a) - parseMatchDate(b));
+
+      sortedMatchs.forEach(match => {
         const player = getCurrentPlayer();
         const myId = player ? player.id : null;
 
@@ -903,7 +952,7 @@
               <div>
                 <div class="flex items-center space-x-2">
                   <span class="font-display font-bold text-slate-900 text-base">${match.dateDisplay}</span>
-                  <span class="bg-slate-100 text-slate-700 font-bold text-xs px-2 py-0.5 rounded-lg">${match.timeDisplay} (${match.durationDisplay || '1h'})</span>
+                  <span class="bg-slate-100 text-slate-700 font-bold text-xs px-2 py-0.5 rounded-lg">${match.timeDisplay}</span>
                 </div>
                 <div class="mt-1 flex items-center space-x-1.5">
                   ${getStatusBadge(isReserved)}
@@ -937,7 +986,7 @@
               <div class="flex flex-wrap gap-1.5">
                 ${match.titulaires.length === 0 ? '<span class="text-xs text-slate-400 italic">Personne pour l\'instant</span>' : ''}
                 ${match.titulaires.map(id => {
-                  const p = appData.players ? appData.players.find(x => x.id === id) : null;
+                  const p = appData.players.find(x => x.id === id);
                   const pName = p ? p.name : 'Inconnu';
                   return `<span class="bg-pitch-50 border border-pitch-200 text-pitch-900 font-medium text-xs px-2.5 py-1 rounded-lg flex items-center space-x-1.5">
                     ${p && p.avatar ? `<img src="${p.avatar}" class="w-4 h-4 rounded-full object-cover">` : '<span class="text-[10px]">⚽</span>'}
@@ -955,7 +1004,7 @@
                 </span>
                 <div class="flex flex-wrap gap-1.5">
                   ${match.waitingList.map((id, index) => {
-                    const p = appData.players ? appData.players.find(x => x.id === id) : null;
+                    const p = appData.players.find(x => x.id === id);
                     const pName = p ? p.name : 'Inconnu';
                     return `<span class="bg-amber-50 border border-amber-200 text-amber-900 font-medium text-xs px-2 py-0.5 rounded-lg flex items-center space-x-1">
                       <span>#${index + 1}</span>
@@ -982,7 +1031,7 @@
               </div>
 
               ${isTitulaire ? `
-                <button onclick="sendWhatsappReminder('${match.dateDisplay}', '${match.timeDisplay}', '${match.durationDisplay || '1h'}')" class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold py-2 rounded-xl text-xs flex items-center justify-center space-x-1.5">
+                <button onclick="sendWhatsappReminder('${match.dateDisplay}', '${match.timeDisplay}')" class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold py-2 rounded-xl text-xs flex items-center justify-center space-x-1.5">
                   <i class="fa-brands fa-whatsapp text-sm"></i>
                   <span>Envoyer un rappel WhatsApp</span>
                 </button>
