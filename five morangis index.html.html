@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Five Morangis - Organisation de Matchs</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            pitch: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              200: '#bbf7d0',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Lexend', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Firebase CDN -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .font-display { font-family: 'Lexend', sans-serif; }
+    /* Hide scrollbars for clean UI */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+
+<body class="h-full text-slate-800 flex flex-col max-w-md mx-auto bg-slate-100 shadow-2xl relative min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-pitch-800 text-white p-4 sticky top-0 z-30 shadow-md">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-2">
+        <div class="bg-pitch-500 text-white p-2 rounded-xl">
+          <i class="fa-solid fa-futbol text-xl"></i>
+        </div>
+        <div>
+          <h1 class="font-display font-extrabold text-lg leading-tight tracking-wide">Five Morangis</h1>
+          <p class="text-[11px] text-pitch-200 font-medium">1 Rue de l'Avenir, 91420 Morangis</p>
+        </div>
+      </div>
+      
+      <!-- Selecteur de Joueur / Profil -->
+      <div id="currentUserContainer" class="relative">
+        <button onclick="toggleUserDropdown()" class="flex items-center space-x-2 bg-pitch-900/60 border border-pitch-700/50 hover:bg-pitch-900 px-2.5 py-1.5 rounded-xl transition">
+          <div id="userAvatar" class="w-6 h-6 rounded-full bg-pitch-600 flex items-center justify-center text-xs font-bold overflow-hidden">
+            ?
+          </div>
+          <span id="userName" class="text-xs font-semibold max-w-[80px] truncate">Connexion</span>
+          <i class="fa-solid fa-chevron-down text-[10px] text-pitch-300"></i>
+        </button>
+
+        <!-- Dropdown Profils -->
+        <div id="userDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white text-slate-800 rounded-xl shadow-xl border border-slate-100 py-1 z-50">
+          <div class="px-3 py-1.5 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            Changer de joueur
+          </div>
+          <div id="playersListDropdown" class="max-h-48 overflow-y-auto py-1">
+            <!-- Injecté en JS -->
+          </div>
+          <div class="border-t border-slate-100 p-1 space-y-0.5">
+            <button onclick="triggerAvatarUpload()" class="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 font-semibold rounded-lg flex items-center space-x-2">
+              <i class="fa-solid fa-camera text-xs text-pitch-600"></i>
+              <span>Modifier ma photo</span>
+            </button>
+            <button onclick="openAddPlayerModal()" class="w-full text-left px-3 py-1.5 text-xs text-pitch-700 hover:bg-pitch-50 font-semibold rounded-lg flex items-center space-x-2">
+              <i class="fa-solid fa-user-plus text-xs"></i>
+              <span>Créer un profil</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Input caché pour le téléchargement de photo depuis le dropdown -->
+  <input type="file" id="avatarFileInput" accept="image/*" class="hidden" onchange="handleAvatarUpload(event)">
+
+  <!-- Navigation par Onglets -->
+  <nav class="bg-white border-b border-slate-200 sticky top-[68px] z-20 shadow-sm flex text-[11px] font-bold text-slate-500">
+    <button onclick="switchTab('matchs')" id="tab-matchs" class="flex-1 py-3 text-center border-b-2 border-pitch-600 text-pitch-700 flex items-center justify-center space-x-1 transition">
+      <i class="fa-solid fa-calendar-days text-xs"></i>
+      <span>Matchs</span>
+      <span id="badgeMatchsCount" class="bg-pitch-100 text-pitch-800 text-[10px] px-1.5 py-0.2 rounded-full hidden">0</span>
+    </button>
+    <button onclick="switchTab('sondage')" id="tab-sondage" class="flex-1 py-3 text-center border-b-2 border-transparent hover:text-slate-700 flex items-center justify-center space-x-1 transition">
+      <i class="fa-solid fa-square-poll-vertical text-xs"></i>
+      <span>Sondage</span>
+    </button>
+    <button onclick="switchTab('badges')" id="tab-badges" class="flex-1 py-3 text-center border-b-2 border-transparent hover:text-slate-700 flex items-center justify-center space-x-1 transition">
+      <i class="fa-solid fa-award text-xs"></i>
+      <span>Badges</span>
+    </button>
+    <button onclick="switchTab('joueurs')" id="tab-joueurs" class="flex-1 py-3 text-center border-b-2 border-transparent hover:text-slate-700 flex items-center justify-center space-x-1 transition">
+      <i class="fa-solid fa-users text-xs"></i>
+      <span>Joueurs</span>
+    </button>
+  </nav>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 p-4 pb-20 overflow-y-auto space-y-4">
+
+    <!-- TAB 1: MATCHS VALIDÉS -->
+    <section id="content-matchs" class="space-y-4">
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
+        <div>
+          <h2 class="font-display font-bold text-base text-slate-800">Matchs confirmés</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Gestion des réservations et inscriptions.</p>
+        </div>
+        <button onclick="openCreateMatchModal()" class="bg-pitch-600 hover:bg-pitch-700 text-white text-xs font-bold px-3 py-2 rounded-xl flex items-center space-x-1 shadow-sm">
+          <i class="fa-solid fa-plus"></i>
+          <span>Créer</span>
+        </button>
+      </div>
+
+      <div id="matchsListContainer" class="space-y-3">
+        <!-- Injecté par JS -->
+      </div>
+    </section>
+
+    <!-- TAB 2: SONDAGE DISPONIBILITÉS -->
+    <section id="content-sondage" class="space-y-4 hidden">
+      <!-- Info Header Sondage -->
+      <div class="bg-gradient-to-r from-pitch-800 to-pitch-900 text-white rounded-2xl p-4 shadow-sm relative overflow-hidden">
+        <div class="relative z-10">
+          <span class="bg-pitch-500/30 text-pitch-200 border border-pitch-400/30 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">
+            Session de la semaine
+          </span>
+          <h2 class="font-display text-xl font-bold mt-1">Disponibilités Foot 5</h2>
+          <p class="text-xs text-pitch-200 mt-0.5">Propose un créneau ou réponds aux sondages en cours pour planifier un match !</p>
+        </div>
+        <i class="fa-solid fa-futbol absolute -bottom-4 -right-4 text-7xl text-white/5"></i>
+      </div>
+
+      <!-- Formulaire Proposer / Créer Sondage -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+        <h3 class="font-display text-sm font-bold text-slate-800 flex items-center justify-between">
+          <span>Proposer ou voter sur un créneau</span>
+        </h3>
+        
+        <form id="voteForm" onsubmit="handleVoteSubmit(event)" class="space-y-3">
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="text-[11px] font-bold text-slate-500 uppercase">Jour</label>
+              <select id="voteDate" class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-semibold focus:outline-none focus:border-pitch-500">
+                <!-- Prochains jours injectés par JS -->
+              </select>
+            </div>
+            <div>
+              <label class="text-[11px] font-bold text-slate-500 uppercase">Heure</label>
+              <select id="voteTime" class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-semibold focus:outline-none focus:border-pitch-500">
+                <option value="19:00" selected>19h00</option>
+                <option value="19:30">19h30</option>
+                <option value="20:00">20h00</option>
+                <option value="20:30">20h30</option>
+                <option value="21:00">21h00</option>
+                <option value="21:30">21h30</option>
+                <option value="22:00">22h00</option>
+                <option value="22:30">22h30</option>
+                <option value="23:00">23h00</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[11px] font-bold text-slate-500 uppercase">Durée</label>
+              <select id="voteDuration" class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-semibold focus:outline-none focus:border-pitch-500">
+                <option value="1h" selected>1h</option>
+                <option value="1h30">1h30</option>
+                <option value="2h">2h</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="submit" class="w-full bg-pitch-600 hover:bg-pitch-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm flex items-center justify-center space-x-2 transition">
+            <i class="fa-solid fa-plus"></i>
+            <span>Créer le sondage / Répondre dispo</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- Liste des Créneaux du Sondage -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="font-display text-sm font-bold text-slate-800">Sondages en cours</h3>
+          <span class="text-[11px] text-slate-400 font-medium">Mis à jour en direct</span>
+        </div>
+
+        <div id="slotsContainer" class="space-y-3">
+          <!-- Injecté par JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: BADGES & TROPHÉES -->
+    <section id="content-badges" class="space-y-4 hidden">
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-2">
+        <h2 class="font-display font-bold text-base text-slate-800">Badges & Récompenses</h2>
+        <p class="text-xs text-slate-500 mt-0.5">Débloque des trophées après au moins 2 mois d'utilisation selon tes participations et présences.</p>
+        <div id="currentStreakBanner" class="bg-orange-50 border border-orange-200 text-orange-800 font-bold text-xs p-2.5 rounded-xl flex items-center space-x-2">
+          <span><span id="streakFlames">🔥</span> Série en cours : <strong id="streakCountText">0</strong> match(s) d'affilée sans rater</span>
+        </div>
+      </div>
+
+      <div id="badgesGrid" class="grid grid-cols-2 gap-3">
+        <!-- Injecté par JS -->
+      </div>
+    </section>
+
+    <!-- TAB 4: JOUEURS & STATS -->
+    <section id="content-joueurs" class="space-y-4 hidden">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="font-display font-bold text-base text-slate-800">Membres de la communauté</h2>
+          <p class="text-xs text-slate-500">Classés par nombre de présences aux matchs</p>
+        </div>
+        <button onclick="openAddPlayerModal()" class="bg-pitch-600 hover:bg-pitch-700 text-white text-xs font-bold px-3 py-2 rounded-xl flex items-center space-x-1 shadow-sm">
+          <i class="fa-solid fa-plus"></i>
+          <span>Ajouter</span>
+        </button>
+      </div>
+
+      <div id="playersGrid" class="grid grid-cols-2 gap-2.5">
+        <!-- Injecté par JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal Ajout Joueur avec Import de Photo -->
+  <div id="addPlayerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-xs w-full p-5 space-y-4 shadow-2xl animate-fade-in">
+      <div class="flex items-center justify-between">
+        <h3 class="font-display font-bold text-base text-slate-900">Nouveau Profil</h3>
+        <button onclick="closeAddPlayerModal()" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleCreatePlayer(event)" class="space-y-3">
+        <div>
+          <label class="text-[11px] font-bold text-slate-500 uppercase">Nom / Pseudo</label>
+          <input type="text" id="newPlayerName" required placeholder="Ex: Lucas, Zizou..." class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-semibold focus:outline-none focus:border-pitch-500">
+        </div>
+
+        <div>
+          <label class="text-[11px] font-bold text-slate-500 uppercase">Photo de profil</label>
+          <input type="file" id="newPlayerAvatarFile" accept="image/*" class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs text-slate-600 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-pitch-50 file:text-pitch-700 hover:file:bg-pitch-100">
+        </div>
+
+        <div class="pt-2 flex space-x-2">
+          <button type="button" onclick="closeAddPlayerModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs">Annuler</button>
+          <button type="submit" class="flex-1 bg-pitch-600 hover:bg-pitch-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm">Créer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Création Directe de Match -->
+  <div id="createMatchModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-xs w-full p-5 space-y-4 shadow-2xl animate-fade-in">
+      <div class="flex items-center justify-between">
+        <h3 class="font-display font-bold text-base text-slate-900">Créer un Match</h3>
+        <button onclick="closeCreateMatchModal()" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleCreateMatchSubmit(event)" class="space-y-3">
+        <div>
+          <label class="text-[11px] font-bold text-slate-500 uppercase">Date</label>
+          <input type="date" id="customMatchDate" required class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-semibold focus:outline-none focus:border-pitch-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-[11px] font-bold text-slate-500 uppercase">Heure</label>
+            <select id="customMatchTime" class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-semibold focus:outline-none focus:border-pitch-500">
+              <option value="19:00" selected>19h00</option>
+              <option value="19:30">19h30</option>
+              <option value="20:00">20h00</option>
+              <option value="20:30">20h30</option>
+              <option value="21:00">21h00</option>
+              <option value="21:30">21h30</option>
+              <option value="22:00">22h00</option>
+              <option value="22:30">22h30</option>
+              <option value="23:00">23h00</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[11px] font-bold text-slate-500 uppercase">Durée</label>
+            <select id="customMatchDuration" class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-semibold focus:outline-none focus:border-pitch-500">
+              <option value="1h" selected>1h</option>
+              <option value="1h30">1h30</option>
+              <option value="2h">2h</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="pt-2 flex space-x-2">
+          <button type="button" onclick="closeCreateMatchModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs">Annuler</button>
+          <button type="submit" class="flex-1 bg-pitch-600 hover:bg-pitch-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm">Créer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-full shadow-lg opacity-0 pointer-events-none transition-all duration-300 z-50 flex items-center space-x-2 max-w-xs text-center">
+    <i class="fa-solid fa-circle-info text-pitch-400"></i>
+    <span id="toastMsg">Action effectuée</span>
+  </div>
+
+  <!-- JavaScript Logic -->
+  <script>
+    // --- APP STATE & INITIALIZATION ---
+    const STORAGE_KEY = 'foot5_app_state_v1';
+
+    let isFirebaseConnected = false;
+    let db = null;
+
+    // Liste complète des badges avec icônes et descriptions
+    const BADGES_LIST = [
+      { id: 'b_touriste', icon: '🧳', title: 'Touriste', desc: 'Vient 1 fois par mois, on lui demande son passeport', color: 'text-blue-600 bg-blue-50' },
+      { id: 'b_sncf', icon: '🚌', title: 'Renfort SNCF', desc: 'Vient quand ça l\'arrange, genre 1 fois sur 3', color: 'text-amber-600 bg-amber-50' },
+      { id: 'b_remplacant', icon: '🦵', title: 'Titulaire remplaçant', desc: 'Assez régulier mais pas indéboulonnable, 1 sur 2', color: 'text-indigo-600 bg-indigo-50' },
+      { id: 'b_titulaire', icon: '🎯', title: 'Titulaire', desc: 'Quasi toujours là, on compte sur lui', color: 'text-pitch-600 bg-pitch-50' },
+      { id: 'b_legende', icon: '🏛️', title: 'Légende du terrain', desc: 'Présent à 95% des matchs, statue à ériger (ou presque)', color: 'text-purple-600 bg-purple-50' },
+      { id: 'b_increvable', icon: '🧟', title: 'Increvable', desc: 'Vient même malade, blessé, ou sous la neige', color: 'text-emerald-600 bg-emerald-50' },
+      { id: 'b_ovni', icon: '🛸', title: 'OVNI', desc: 'Aperçu une fois, présent moins d\'une fois par mois, jamais confirmé scientifiquement', color: 'text-gray-600 bg-gray-100' },
+      { id: 'b_girouette', icon: '💨', title: 'Girouette', desc: 'Pour celui qui se désinscrit au moins une fois par mois', color: 'text-rose-600 bg-rose-50' },
+      { id: 'b_retardataire', icon: '⏳', title: 'Toujours à la bourre', desc: 'Se retrouve en liste d\'attente au moins 1 fois par mois', color: 'text-orange-600 bg-orange-50' }
+    ];
+
+    // Structure de données initiale si vide
+    let appData = {
+      players: [
+        { 
+          id: 'p1', 
+          name: 'Alex', 
+          avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80', 
+          createdAt: Date.now() - (65 * 24 * 60 * 60 * 1000), // > 2 mois
+          streak: 4,
+          unsubscribesPerMonth: 0,
+          waitingListPerMonth: 0,
+          isIncrevable: true
+        },
+        { 
+          id: 'p2', 
+          name: 'Thomas', 
+          avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&auto=format&fit=crop&q=80', 
+          createdAt: Date.now() - (70 * 24 * 60 * 60 * 1000),
+          streak: 1,
+          unsubscribesPerMonth: 1,
+          waitingListPerMonth: 1,
+          isIncrevable: false
+        },
+        { 
+          id: 'p3', 
+          name: 'Romain', 
+          avatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100&auto=format&fit=crop&q=80', 
+          createdAt: Date.now() - (10 * 24 * 60 * 60 * 1000), // Moins de 2 mois
+          streak: 0,
+          unsubscribesPerMonth: 0,
+          waitingListPerMonth: 0,
+          isIncrevable: false
+        },
+        { 
+          id: 'p4', 
+          name: 'Maxime', 
+          avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&auto=format&fit=crop&q=80', 
+          createdAt: Date.now() - (80 * 24 * 60 * 60 * 1000),
+          streak: 0,
+          unsubscribesPerMonth: 2,
+          waitingListPerMonth: 0,
+          isIncrevable: false
+        }
+      ],
+      currentUserId: 'p1',
+      votes: {}, // Key: slotKey (ex: "2023-10-25_19:00_1h"), Value: Array of playerIds (Ordre de réponse conservé)
+      matchs: [] // Array of match objects
+    };
+
+    // --- INITIALISATION AU CHARGEMENT ---
+    window.addEventListener('DOMContentLoaded', () => {
+      loadLocalBackup();
+      initDatesInForm();
+      initFirebase();
+      renderAll();
+    });
+
+    // --- FIREBASE SYNC ---
+    function initFirebase() {
+      try {
+        if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+          db = firebase.database();
+          isFirebaseConnected = true;
+
+          db.ref('foot5_data').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+              appData = data;
+              saveLocalBackup();
+              renderAll();
+            }
+          });
+        }
+      } catch (e) {
+        console.log("Mode Local uniquement");
+      }
+    }
+
+    function syncData() {
+      saveLocalBackup();
+      if (isFirebaseConnected && db) {
+        db.ref('foot5_data').set(appData);
+      }
+      renderAll();
+    }
+
+    function saveLocalBackup() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+    }
+
+    function loadLocalBackup() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          appData = JSON.parse(saved);
+        } catch (e) {
+          console.error("Erreur de lecture du stockage local");
+        }
+      }
+    }
+
+    // --- LOGIQUE METIER & RENDU ---
+    function getCurrentPlayer() {
+      if (!appData.players || appData.players.length === 0) {
+        return { id: 'p1', name: 'Joueur', avatar: '', createdAt: Date.now(), streak: 0 };
+      }
+      return appData.players.find(p => p.id === appData.currentUserId) || appData.players[0];
+    }
+
+    function getPlayerMatchCount(playerId) {
+      if (!appData.matchs) return 0;
+      let count = 0;
+      appData.matchs.forEach(m => {
+        if (m.titulaires && m.titulaires.includes(playerId)) {
+          count++;
+        }
+      });
+      return count;
+    }
+
+    function getPlayerMonthsActive(player) {
+      if (!player.createdAt) return 0;
+      const diffMs = Date.now() - player.createdAt;
+      const diffDays = diffMs / (1000 * 60 * 60 * 24);
+      return diffDays / 30; // Nombre de mois approximatif
+    }
+
+    function calculatePlayerBadges(player) {
+      const months = getPlayerMonthsActive(player);
+      
+      // Condition stricte : au moins 2 mois d'utilisation
+      if (months < 2) {
+        return [];
+      }
+
+      const totalMatchs = appData.matchs ? appData.matchs.length : 0;
+      const matchPlayed = getPlayerMatchCount(player.id);
+
+      const presenceRate = totalMatchs > 0 ? (matchPlayed / totalMatchs) : 0;
+      const presencesPerMonth = months > 0 ? (matchPlayed / months) : 0;
+      
+      const unlockedIds = [];
+
+      // Déduction des badges
+      if (presenceRate >= 0.95 && totalMatchs > 0) unlockedIds.push('b_legende');
+      else if (presenceRate >= 0.75 && totalMatchs > 0) unlockedIds.push('b_titulaire');
+      else if (presenceRate >= 0.45 && presenceRate < 0.60) unlockedIds.push('b_remplacant');
+      else if (presenceRate >= 0.25 && presenceRate < 0.40) unlockedIds.push('b_sncf');
+
+      if (presencesPerMonth >= 0.9 && presencesPerMonth <= 1.2) unlockedIds.push('b_touriste');
+      if (presencesPerMonth < 0.8) unlockedIds.push('b_ovni');
+
+      if (player.unsubscribesPerMonth && player.unsubscribesPerMonth >= 1) unlockedIds.push('b_girouette');
+      if (player.waitingListPerMonth && player.waitingListPerMonth >= 1) unlockedIds.push('b_retardataire');
+      if (player.isIncrevable) unlockedIds.push('b_increvable');
+
+      return unlockedIds;
+    }
+
+    function renderAll() {
+      renderCurrentUser();
+      renderVotesSlots();
+      renderMatchs();
+      renderBadges();
+      renderPlayers();
+      updateMatchBadge();
+    }
+
+    function renderCurrentUser() {
+      const player = getCurrentPlayer();
+      if (!player) return;
+
+      const avatarEl = document.getElementById('userAvatar');
+      const nameEl = document.getElementById('userName');
+
+      if (player.avatar) {
+        avatarEl.innerHTML = `<img src="${player.avatar}" class="w-full h-full object-cover">`;
+      } else {
+        avatarEl.innerText = player.name ? player.name.charAt(0).toUpperCase() : '?';
+      }
+      nameEl.innerText = player.name || 'Connexion';
+
+      const dropdownContainer = document.getElementById('playersListDropdown');
+      if (appData.players) {
+        dropdownContainer.innerHTML = appData.players.map(p => `
+          <button onclick="selectUser('${p.id}')" class="w-full text-left px-3 py-1.5 text-xs hover:bg-slate-50 flex items-center justify-between ${p.id === appData.currentUserId ? 'font-bold text-pitch-700 bg-pitch-50/50' : 'text-slate-700'}">
+            <span class="truncate">${p.name}</span>
+            ${p.id === appData.currentUserId ? '<i class="fa-solid fa-check text-[10px] text-pitch-600"></i>' : ''}
+          </button>
+        `).join('');
+      }
+    }
+
+    function selectUser(playerId) {
+      appData.currentUserId = playerId;
+      toggleUserDropdown();
+      syncData();
+      showToast(`Connecté en tant que ${getCurrentPlayer().name}`);
+    }
+
+    function toggleUserDropdown() {
+      const dd = document.getElementById('userDropdown');
+      dd.classList.toggle('hidden');
+    }
+
+    function triggerAvatarUpload() {
+      toggleUserDropdown();
+      document.getElementById('avatarFileInput').click();
+    }
+
+    function handleAvatarUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64Image = e.target.result;
+        const player = getCurrentPlayer();
+        if (player) {
+          player.avatar = base64Image;
+          syncData();
+          showToast("Photo de profil mise à jour !");
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function initDatesInForm() {
+      const select = document.getElementById('voteDate');
+      if (!select) return;
+      select.innerHTML = '';
+      
+      const options = { weekday: 'short', day: 'numeric', month: 'short' };
+      const today = new Date();
+
+      for (let i = 0; i < 28; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() + i);
+        
+        const dateStr = d.toISOString().split('T')[0];
+        const formatted = d.toLocaleDateString('fr-FR', options);
+        
+        const opt = document.createElement('option');
+        opt.value = dateStr;
+        opt.innerText = formatted.charAt(0).toUpperCase() + formatted.slice(1);
+        if (i === 1) opt.selected = true;
+        select.appendChild(opt);
+      }
+    }
+
+    // --- SONDAGES / VOTES ---
+    function handleVoteSubmit(e) {
+      e.preventDefault();
+      const date = document.getElementById('voteDate').value;
+      const time = document.getElementById('voteTime').value;
+      const duration = document.getElementById('voteDuration').value;
+      if (!date || !time || !duration) return;
+      const slotKey = `${date}_${time}_${duration}`;
+
+      if (!appData.votes) {
+        appData.votes = {};
+      }
+
+      if (!appData.votes[slotKey]) {
+        appData.votes[slotKey] = [];
+      }
+
+      const currentPlayer = getCurrentPlayer();
+      const currentPlayerId = currentPlayer ? currentPlayer.id : 'p1';
+
+      if (!appData.votes[slotKey].includes(currentPlayerId)) {
+        appData.votes[slotKey].push(currentPlayerId); // L'ordre chronologique de réponse est conservé
+        showToast("Sondage créé / Dispo ajoutée !");
+      } else {
+        showToast("Tu as déjà répondu présent à ce sondage !");
+      }
+
+      syncData();
+    }
+
+    function toggleVote(slotKey) {
+      if (!appData.votes) appData.votes = {};
+      if (!appData.votes[slotKey]) appData.votes[slotKey] = [];
+
+      const currentPlayer = getCurrentPlayer();
+      const currentPlayerId = currentPlayer ? currentPlayer.id : 'p1';
+
+      const index = appData.votes[slotKey].indexOf(currentPlayerId);
+      if (index > -1) {
+        appData.votes[slotKey].splice(index, 1);
+        showToast("Disponibilité retirée");
+      } else {
+        appData.votes[slotKey].push(currentPlayerId); // Ajouté à la fin (respect de l'ordre)
+        showToast("Disponibilité ajoutée !");
+      }
+
+      if (appData.votes[slotKey].length === 0) {
+        delete appData.votes[slotKey];
+      }
+
+      syncData();
+    }
+
+    function deleteSlot(slotKey) {
+      if (confirm("Supprimer ce créneau du sondage ?")) {
+        if (appData.votes && appData.votes[slotKey]) {
+          delete appData.votes[slotKey];
+        }
+        syncData();
+        showToast("Sondage supprimé.");
+      }
+    }
+
+    function validateAndCreateMatch(slotKey) {
+      const voters = (appData.votes && appData.votes[slotKey]) ? appData.votes[slotKey] : [];
+      if (voters.length === 0) {
+        showToast("Impossible : aucun joueur n'a répondu au sondage.");
+        return;
+      }
+
+      const parts = slotKey.split('_');
+      const dateStr = parts[0];
+      const timeStr = parts[1] || '19:00';
+      const durationStr = parts[2] || '1h';
+      
+      const dateObj = new Date(dateStr);
+      const options = { weekday: 'short', day: 'numeric', month: 'short' };
+      const formattedDate = !isNaN(dateObj.getTime()) ? dateObj.toLocaleDateString('fr-FR', options) : dateStr;
+
+      // Les 10 premiers répondants deviennent titulaires, les suivants en liste d'attente
+      const titulaires = voters.slice(0, 10);
+      const waitingList = voters.slice(10);
+
+      // Met à jour la statistique de liste d'attente pour ceux qui y sont basculés
+      waitingList.forEach(wId => {
+        const p = appData.players.find(x => x.id === wId);
+        if (p) {
+          p.waitingListPerMonth = (p.waitingListPerMonth || 0) + 1;
+        }
+      });
+
+      const newMatch = {
+        id: 'match_' + Date.now(),
+        slotKey: slotKey,
+        dateDisplay: formattedDate,
+        timeDisplay: timeStr,
+        durationDisplay: durationStr,
+        titulaires: titulaires,
+        waitingList: waitingList,
+        isReserved: false,
+        reservationStatus: 'NONE'
+      };
+
+      if (!appData.matchs) appData.matchs = [];
+      appData.matchs.push(newMatch);
+
+      // Supprimer le sondage après sa validation
+      if (appData.votes) {
+        delete appData.votes[slotKey];
+      }
+
+      syncData();
+      switchTab('matchs');
+      showToast("Match créé à partir des réponses du sondage !");
+    }
+
+    function renderVotesSlots() {
+      const container = document.getElementById('slotsContainer');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const slotKeys = Object.keys(appData.votes || {});
+
+      if (slotKeys.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white rounded-2xl p-6 text-center border border-slate-200">
+            <i class="fa-solid fa-calendar-minus text-slate-300 text-3xl mb-2"></i>
+            <p class="text-sm font-bold text-slate-700">Aucun créneau proposé</p>
+            <p class="text-xs text-slate-400 mt-0.5">Sois le premier à créer un sondage ci-dessus !</p>
+          </div>
+        `;
+        return;
+      }
+
+      slotKeys.sort().forEach(slotKey => {
+        const voters = appData.votes[slotKey] || [];
+        const count = voters.length;
+        const parts = slotKey.split('_');
+        const dateStr = parts[0];
+        const timeStr = parts[1] || '';
+        const durationStr = parts[2] || '1h';
+
+        const dateObj = new Date(dateStr);
+        const options = { weekday: 'long', day: 'numeric', month: 'long' };
+        const formattedDate = !isNaN(dateObj.getTime()) ? dateObj.toLocaleDateString('fr-FR', options) : dateStr;
+
+        const player = getCurrentPlayer();
+        const myId = player ? player.id : null;
+        const hasVoted = myId && voters.includes(myId);
+
+        const progressPercent = Math.min((count / 10) * 100, 100);
+
+        const card = document.createElement('div');
+        card.className = "bg-white rounded-2xl border border-slate-200 p-4 space-y-3 shadow-sm relative";
+
+        card.innerHTML = `
+          <div class="flex items-start justify-between">
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="font-display font-bold text-slate-900 text-sm capitalize">${formattedDate}</span>
+                <span class="bg-slate-100 text-slate-700 font-bold text-xs px-2 py-0.5 rounded-lg">${timeStr} (${durationStr})</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5">${count} joueur(s) répondu(s)</p>
+            </div>
+
+            <div class="flex items-center space-x-1">
+              <button onclick="deleteSlot('${slotKey}')" class="text-slate-300 hover:text-red-500 p-1.5 transition" title="Supprimer le sondage">
+                <i class="fa-solid fa-trash-can text-xs"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Barre de progression -->
+          <div>
+            <div class="flex justify-between text-[11px] font-bold text-slate-500 mb-1">
+              <span>Objectif 10 joueurs</span>
+              <span class="${count >= 10 ? 'text-pitch-600 font-extrabold' : ''}">${count}/10</span>
+            </div>
+            <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div class="h-full ${count >= 10 ? 'bg-pitch-500' : 'bg-amber-400'} transition-all duration-500" style="width: ${progressPercent}%"></div>
+            </div>
+          </div>
+
+          <!-- Liste Ordre des répondants -->
+          <div class="flex flex-wrap gap-1.5 pt-1">
+            ${voters.length === 0 ? '<span class="text-xs text-slate-400 italic">Aucune réponse pour le moment</span>' : ''}
+            ${voters.map((id, index) => {
+              const pObj = appData.players ? appData.players.find(p => p.id === id) : null;
+              const name = pObj ? pObj.name : 'Joueur';
+              const isTitu = index < 10;
+              return `
+                <span class="${isTitu ? 'bg-pitch-50 text-pitch-800 border border-pitch-200' : 'bg-amber-50 text-amber-800 border border-amber-200'} text-[10px] font-semibold px-2 py-0.5 rounded-md flex items-center space-x-1">
+                  <span>#${index + 1}</span>
+                  <span>${name}</span>
+                </span>
+              `;
+            }).join('')}
+          </div>
+
+          <!-- Boutons d'action -->
+          <div class="pt-2 flex flex-col space-y-2 border-t border-slate-100">
+            <button onclick="toggleVote('${slotKey}')" class="w-full py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition ${hasVoted ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'}">
+              <i class="fa-solid ${hasVoted ? 'fa-user-minus' : 'fa-user-plus'}"></i>
+              <span>${hasVoted ? 'Retirer ma dispo' : 'Je suis dispo !'}</span>
+            </button>
+
+            <button onclick="validateAndCreateMatch('${slotKey}')" class="w-full bg-pitch-600 hover:bg-pitch-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm flex items-center justify-center space-x-1.5">
+              <i class="fa-solid fa-check-circle"></i>
+              <span>Valider et créer le match (${count} inscrit${count > 1 ? 's' : ''})</span>
+            </button>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    // --- TAB MATCHS ---
+    function openCreateMatchModal() {
+      document.getElementById('createMatchModal').classList.remove('hidden');
+    }
+
+    function closeCreateMatchModal() {
+      document.getElementById('createMatchModal').classList.add('hidden');
+    }
+
+    function handleCreateMatchSubmit(e) {
+      e.preventDefault();
+      const dateVal = document.getElementById('customMatchDate').value;
+      const timeVal = document.getElementById('customMatchTime').value;
+      const durationVal = document.getElementById('customMatchDuration').value;
+
+      if (!dateVal) return;
+
+      const dateObj = new Date(dateVal);
+      const options = { weekday: 'short', day: 'numeric', month: 'short' };
+      const formattedDate = dateObj.toLocaleDateString('fr-FR', options);
+
+      const currentPlayer = getCurrentPlayer();
+      const myId = currentPlayer ? currentPlayer.id : 'p1';
+
+      const newMatch = {
+        id: 'match_' + Date.now(),
+        dateDisplay: formattedDate,
+        timeDisplay: timeVal,
+        durationDisplay: durationVal,
+        titulaires: [myId],
+        waitingList: [],
+        isReserved: false,
+        reservationStatus: 'NONE'
+      };
+
+      if (!appData.matchs) appData.matchs = [];
+      appData.matchs.push(newMatch);
+
+      closeCreateMatchModal();
+      syncData();
+      showToast("Match créé manuellement !");
+    }
+
+    function renderMatchs() {
+      const container = document.getElementById('matchsListContainer');
+      if (!container) return;
+      container.innerHTML = '';
+
+      if (!appData.matchs || appData.matchs.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white rounded-2xl p-6 text-center border border-slate-200">
+            <i class="fa-solid fa-calendar-xmark text-slate-300 text-3xl mb-2"></i>
+            <p class="text-sm font-bold text-slate-700">Aucun match programmé</p>
+            <p class="text-xs text-slate-400 mt-0.5">Validez un sondage ou créez un match directement !</p>
+          </div>
+        `;
+        return;
+      }
+
+      appData.matchs.forEach(match => {
+        const player = getCurrentPlayer();
+        const myId = player ? player.id : null;
+
+        if (!match.titulaires) match.titulaires = [];
+        if (!match.waitingList) match.waitingList = [];
+
+        const isTitulaire = myId && match.titulaires.includes(myId);
+        const isWaiting = myId && match.waitingList.includes(myId);
+
+        const isReserved = match.reservationStatus === 'RESERVED' || match.isReserved === true;
+
+        const card = document.createElement('div');
+        card.className = "bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden";
+
+        card.innerHTML = `
+          <div class="p-4 space-y-3">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="flex items-center space-x-2">
+                  <span class="font-display font-bold text-slate-900 text-base">${match.dateDisplay}</span>
+                  <span class="bg-slate-100 text-slate-700 font-bold text-xs px-2 py-0.5 rounded-lg">${match.timeDisplay} (${match.durationDisplay || '1h'})</span>
+                </div>
+                <div class="mt-1 flex items-center space-x-1.5">
+                  ${getStatusBadge(isReserved)}
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-1">
+                <button onclick="toggleReservation('${match.id}')" class="p-1.5 rounded-lg border text-xs font-semibold transition ${isReserved ? 'bg-pitch-50 border-pitch-200 text-pitch-700 hover:bg-pitch-100' : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-pitch-600 hover:bg-slate-100'}" title="${isReserved ? 'Annuler la réservation' : 'Valider la réservation'}">
+                  <i class="fa-solid ${isReserved ? 'fa-circle-check text-pitch-600' : 'fa-calendar-check'}"></i>
+                </button>
+                <button onclick="deleteMatch('${match.id}')" class="text-slate-400 hover:text-red-500 p-1.5 transition" title="Supprimer le match">
+                  <i class="fa-solid fa-trash-can text-sm"></i>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs font-bold mb-1">
+                <span class="text-slate-600">Joueurs Inscrits (${match.titulaires.length}/10)</span>
+                <span class="${match.titulaires.length >= 10 ? 'text-pitch-600' : 'text-slate-400'}">
+                  ${match.titulaires.length >= 10 ? 'COMPLET' : (10 - match.titulaires.length) + ' place(s) restante(s)'}
+                </span>
+              </div>
+              <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden flex">
+                <div class="bg-pitch-600 h-full transition-all duration-300" style="width: ${(match.titulaires.length / 10) * 100}%"></div>
+              </div>
+            </div>
+
+            <div class="space-y-1.5 pt-1">
+              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Titulaires (10 max) :</span>
+              <div class="flex flex-wrap gap-1.5">
+                ${match.titulaires.length === 0 ? '<span class="text-xs text-slate-400 italic">Personne pour l\'instant</span>' : ''}
+                ${match.titulaires.map(id => {
+                  const p = appData.players ? appData.players.find(x => x.id === id) : null;
+                  const pName = p ? p.name : 'Inconnu';
+                  return `<span class="bg-pitch-50 border border-pitch-200 text-pitch-900 font-medium text-xs px-2.5 py-1 rounded-lg flex items-center space-x-1.5">
+                    ${p && p.avatar ? `<img src="${p.avatar}" class="w-4 h-4 rounded-full object-cover">` : '<span class="text-[10px]">⚽</span>'}
+                    <span>${pName}</span>
+                  </span>`;
+                }).join('')}
+              </div>
+            </div>
+
+            ${match.waitingList.length > 0 ? `
+              <div class="space-y-1.5 pt-2 border-t border-slate-100">
+                <span class="text-[11px] font-bold text-amber-600 uppercase tracking-wider flex items-center space-x-1">
+                  <i class="fa-solid fa-hourglass-half"></i>
+                  <span>Liste d'attente (${match.waitingList.length}) :</span>
+                </span>
+                <div class="flex flex-wrap gap-1.5">
+                  ${match.waitingList.map((id, index) => {
+                    const p = appData.players ? appData.players.find(x => x.id === id) : null;
+                    const pName = p ? p.name : 'Inconnu';
+                    return `<span class="bg-amber-50 border border-amber-200 text-amber-900 font-medium text-xs px-2 py-0.5 rounded-lg flex items-center space-x-1">
+                      <span>#${index + 1}</span>
+                      <span>${pName}</span>
+                    </span>`;
+                  }).join('')}
+                </div>
+              </div>
+            ` : ''}
+
+            <div class="pt-3 border-t border-slate-100 flex flex-col space-y-2">
+              <div class="flex space-x-2">
+                ${!isTitulaire && !isWaiting ? `
+                  <button onclick="registerForMatch('${match.id}')" class="flex-1 bg-pitch-600 hover:bg-pitch-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>S'inscrire au match</span>
+                  </button>
+                ` : `
+                  <button onclick="unregisterFromMatch('${match.id}')" class="flex-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-user-minus"></i>
+                    <span>Se désinscrire (${isTitulaire ? 'Titulaire' : 'En attente'})</span>
+                  </button>
+                `}
+              </div>
+
+              ${isTitulaire ? `
+                <button onclick="sendWhatsappReminder('${match.dateDisplay}', '${match.timeDisplay}', '${match.durationDisplay || '1h'}')" class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold py-2 rounded-xl text-xs flex items-center justify-center space-x-1.5">
+                  <i class="fa-brands fa-whatsapp text-sm"></i>
+                  <span>Envoyer un rappel WhatsApp</span>
+                </button>
+              ` : ''}
+            </div>
+
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function getStatusBadge(isReserved) {
+      if (isReserved) {
+        return `<span class="bg-pitch-100 text-pitch-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center space-x-1">
+          <i class="fa-solid fa-check-circle"></i>
+          <span>TERRAIN RÉSERVÉ</span>
+        </span>`;
+      } else {
+        return `<span class="bg-amber-100 text-amber-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+          ⏳ Non réservé
+        </span>`;
+      }
+    }
+
+    function toggleReservation(matchId) {
+      if (!appData.matchs) return;
+      const match = appData.matchs.find(x => x.id === matchId);
+      if (match) {
+        const isReserved = match.reservationStatus === 'RESERVED' || match.isReserved === true;
+        match.isReserved = !isReserved;
+        match.reservationStatus = !isReserved ? 'RESERVED' : 'NONE';
+
+        syncData();
+        showToast(!isReserved ? 'Terrain marqué comme réservé !' : 'Réservation annulée.');
+      }
+    }
+
+    function registerForMatch(matchId) {
+      if (!appData.matchs) return;
+      const match = appData.matchs.find(m => m.id === matchId);
+      const currentPlayer = getCurrentPlayer();
+      const myId = currentPlayer ? currentPlayer.id : null;
+
+      if (!match || !myId) return;
+
+      if (match.titulaires.length < 10) {
+        match.titulaires.push(myId);
+        showToast("Inscrit comme titulaire !");
+      } else {
+        match.waitingList.push(myId);
+        if (currentPlayer) {
+          currentPlayer.waitingListPerMonth = (currentPlayer.waitingListPerMonth || 0) + 1;
+        }
+        showToast("Match complet, tu es en liste d'attente.");
+      }
+
+      syncData();
+    }
+
+    function unregisterFromMatch(matchId) {
+      if (!appData.matchs) return;
+      const match = appData.matchs.find(m => m.id === matchId);
+      const currentPlayer = getCurrentPlayer();
+      const myId = currentPlayer ? currentPlayer.id : null;
+
+      if (!match || !myId) return;
+
+      if (currentPlayer) {
+        currentPlayer.unsubscribesPerMonth = (currentPlayer.unsubscribesPerMonth || 0) + 1;
+      }
+
+      const tituIndex = match.titulaires.indexOf(myId);
+      if (tituIndex > -1) {
+        match.titulaires.splice(tituIndex, 1);
+
+        if (match.waitingList.length > 0) {
+          const firstWaiting = match.waitingList.shift();
+          match.titulaires.push(firstWaiting);
+          showToast("Désinscrit. Un joueur en attente passe titulaire !");
+        } else {
+          showToast("Tu t'es désinscrit du match.");
+        }
+      } else {
+        const waitIndex = match.waitingList.indexOf(myId);
+        if (waitIndex > -1) {
+          match.waitingList.splice(waitIndex, 1);
+          showToast("Retiré de la liste d'attente.");
+        }
+      }
+
+      syncData();
+    }
+
+    function deleteMatch(matchId) {
+      if (confirm("Supprimer ce match ?")) {
+        if (appData.matchs) {
+          appData.matchs = appData.matchs.filter(m => m.id !== matchId);
+        }
+        syncData();
+        showToast("Match supprimé.");
+      }
+    }
+
+    function sendWhatsappReminder(date, time, duration) {
+      const text = encodeURIComponent(`⚽ *Rappel Five Morangis* !\nMatch prévu le *${date}* à *${time}* (Durée : ${duration}).\nAdresse : 1 Rue de l'Avenir, 91420 Morangis.\nSoyez à l'heure les gars ! 🔥`);
+      window.open(`https://wa.me/?text=${text}`, '_blank');
+    }
+
+    function updateMatchBadge() {
+      const badge = document.getElementById('badgeMatchsCount');
+      if (!badge) return;
+      const count = appData.matchs ? appData.matchs.length : 0;
+      if (count > 0) {
+        badge.innerText = count;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    // --- TAB BADGES ---
+    function renderBadges() {
+      const container = document.getElementById('badgesGrid');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const player = getCurrentPlayer();
+      const streakEl = document.getElementById('streakCountText');
+      const flamesEl = document.getElementById('streakFlames');
+      if (player) {
+        const streakVal = player.streak || 0;
+        if (streakEl) {
+          streakEl.innerText = streakVal;
+        }
+        if (flamesEl) {
+          if (streakVal >= 30) {
+            flamesEl.innerText = '🔥🔥🔥';
+          } else if (streakVal >= 10) {
+            flamesEl.innerText = '🔥🔥';
+          } else {
+            flamesEl.innerText = '🔥';
+          }
+        }
+      }
+
+      const unlockedBadges = player ? calculatePlayerBadges(player) : [];
+      const monthsActive = player ? getPlayerMonthsActive(player) : 0;
+
+      BADGES_LIST.forEach(b => {
+        const isUnlocked = unlockedBadges.includes(b.id);
+
+        const card = document.createElement('div');
+        card.className = `p-3.5 rounded-2xl border transition ${isUnlocked ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-50 border-slate-200/60 opacity-60'} flex flex-col justify-between space-y-2 relative overflow-hidden group cursor-pointer`;
+        card.title = `${b.title} : ${b.desc}`; // Aperçu rapide de la description au survol / appui
+
+        card.innerHTML = `
+          <div class="flex items-start justify-between">
+            <div class="w-9 h-9 rounded-xl ${b.color} flex items-center justify-center text-base font-bold shadow-sm">
+              <span>${b.icon}</span>
+            </div>
+            ${isUnlocked ? '<span class="text-[10px] bg-pitch-100 text-pitch-800 font-extrabold px-1.5 py-0.5 rounded-full">Débloqué</span>' : '<i class="fa-solid fa-lock text-slate-300 text-xs"></i>'}
+          </div>
+          <div>
+            <h4 class="font-display font-bold text-xs text-slate-800">${b.title}</h4>
+            <p class="text-[11px] text-slate-500 mt-1 leading-snug">${b.desc}</p>
+          </div>
+          ${monthsActive < 2 && !isUnlocked ? `
+            <div class="pt-1 border-t border-slate-100/60 text-[9px] text-amber-600 font-semibold flex items-center space-x-1">
+              <i class="fa-solid fa-clock"></i>
+              <span>Requis: 2 mois d'ancienneté</span>
+            </div>
+          ` : ''}
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    // --- TAB JOUEURS ---
+    function renderPlayers() {
+      const container = document.getElementById('playersGrid');
+      if (!container) return;
+      container.innerHTML = '';
+
+      if (!appData.players) return;
+
+      // Tri des joueurs par nombre de présences (matchs joués) décroissant
+      const sortedPlayers = [...appData.players].sort((a, b) => {
+        return getPlayerMatchCount(b.id) - getPlayerMatchCount(a.id);
+      });
+
+      sortedPlayers.forEach(p => {
+        const playedCount = getPlayerMatchCount(p.id);
+        const playerBadges = calculatePlayerBadges(p);
+        const card = document.createElement('div');
+        card.className = "bg-white p-3 rounded-2xl border border-slate-200 flex flex-col justify-between space-y-2 shadow-sm relative group";
+
+        card.innerHTML = `
+          <div class="flex items-start justify-between">
+            <div class="flex items-center space-x-2.5 min-w-0 flex-1">
+              <div class="w-9 h-9 rounded-full bg-pitch-100 text-pitch-800 font-bold flex items-center justify-center flex-shrink-0 overflow-hidden text-xs">
+                ${p.avatar ? `<img src="${p.avatar}" class="w-full h-full object-cover">` : (p.name ? p.name.charAt(0).toUpperCase() : '?')}
+              </div>
+              <div class="min-w-0 flex-1">
+                <h4 class="font-display font-bold text-xs text-slate-800 truncate">${p.name}</h4>
+                <span class="text-[10px] font-semibold text-pitch-700 block">⚽ ${playedCount} match${playedCount > 1 ? 's' : ''} joué${playedCount > 1 ? 's' : ''}</span>
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-1">
+              <button onclick="resetPlayer('${p.id}')" class="text-slate-300 hover:text-amber-500 p-1 transition" title="Réinitialiser les stats du joueur">
+                <i class="fa-solid fa-rotate-right text-[11px]"></i>
+              </button>
+              <button onclick="deletePlayer('${p.id}')" class="text-slate-300 hover:text-red-500 p-1 transition" title="Supprimer le joueur">
+                <i class="fa-solid fa-trash-can text-[11px]"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Badges du joueur avec tooltips -->
+          <div class="flex flex-wrap gap-1 pt-1 border-t border-slate-100">
+            ${playerBadges.length === 0 ? '<span class="text-[10px] text-slate-400 italic">Aucun badge</span>' : ''}
+            ${playerBadges.map(bId => {
+              const bObj = BADGES_LIST.find(x => x.id === bId);
+              if (!bObj) return '';
+              return `<span title="${bObj.title} :${bObj.desc}" class="cursor-help text-xs p-1 bg-slate-50 border border-slate-200 rounded-lg">
+                ${bObj.icon}
+              </span>`;
+            }).join('')}
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function deletePlayer(playerId) {
+      const code = prompt("Veuillez entrer le mot de passe pour supprimer ce joueur :");
+      if (code === null) return;
+      if (code !== "opérationsuppression") {
+        showToast("Code incorrect ! Action annulée.");
+        return;
+      }
+
+      if (confirm("Êtes-vous sûr de vouloir supprimer définitivement ce joueur ?")) {
+        // Retirer des matchs
+        if (appData.matchs) {
+          appData.matchs.forEach(m => {
+            if (m.titulaires) m.titulaires = m.titulaires.filter(id => id !== playerId);
+            if (m.waitingList) m.waitingList = m.waitingList.filter(id => id !== playerId);
+          });
+        }
+        // Retirer des votes sondage
+        if (appData.votes) {
+          Object.keys(appData.votes).forEach(sKey => {
+            appData.votes[sKey] = appData.votes[sKey].filter(id => id !== playerId);
+          });
+        }
+        // Retirer de la liste
+        appData.players = appData.players.filter(p => p.id !== playerId);
+
+        if (appData.currentUserId === playerId && appData.players.length > 0) {
+          appData.currentUserId = appData.players[0].id;
+        }
+
+        syncData();
+        showToast("Joueur supprimé avec succès.");
+      }
+    }
+
+    function resetPlayer(playerId) {
+      const code = prompt("Veuillez entrer le mot de passe pour réinitialiser ce joueur :");
+      if (code === null) return;
+      if (code !== "opérationsuppression") {
+        showToast("Code incorrect ! Action annulée.");
+        return;
+      }
+
+      if (confirm("Réinitialiser les statistiques, présences et la date d'ancienneté de ce joueur ?")) {
+        const player = appData.players ? appData.players.find(p => p.id === playerId) : null;
+        if (player) {
+          player.createdAt = Date.now();
+          player.streak = 0;
+          player.unsubscribesPerMonth = 0;
+          player.waitingListPerMonth = 0;
+          player.isIncrevable = false;
+
+          // Retirer des matchs archivés/existants s'il y a lieu pour réinitialiser son compteur
+          if (appData.matchs) {
+            appData.matchs.forEach(m => {
+              if (m.titulaires) m.titulaires = m.titulaires.filter(id => id !== playerId);
+              if (m.waitingList) m.waitingList = m.waitingList.filter(id => id !== playerId);
+            });
+          }
+
+          syncData();
+          showToast("Statistiques du joueur réinitialisées.");
+        }
+      }
+    }
+
+    function openAddPlayerModal() {
+      document.getElementById('addPlayerModal').classList.remove('hidden');
+    }
+
+    function closeAddPlayerModal() {
+      document.getElementById('addPlayerModal').classList.add('hidden');
+    }
+
+    function handleCreatePlayer(e) {
+      e.preventDefault();
+      const name = document.getElementById('newPlayerName').value.trim();
+      const fileInput = document.getElementById('newPlayerAvatarFile');
+
+      if (!name) return;
+
+      const finishCreation = (avatarBase64 = '') => {
+        const newPlayer = {
+          id: 'p_' + Date.now(),
+          name: name,
+          avatar: avatarBase64,
+          createdAt: Date.now(), // Date de création pour calculer l'ancienneté (2 mois minimum)
+          streak: 0,
+          unsubscribesPerMonth: 0,
+          waitingListPerMonth: 0,
+          isIncrevable: false
+        };
+
+        if (!appData.players) appData.players = [];
+        appData.players.push(newPlayer);
+        appData.currentUserId = newPlayer.id;
+
+        document.getElementById('newPlayerName').value = '';
+        if (fileInput) fileInput.value = '';
+
+        closeAddPlayerModal();
+        syncData();
+        showToast(`Bienvenue ${name} !`);
+      };
+
+      if (fileInput && fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          finishCreation(evt.target.result);
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+      } else {
+        finishCreation();
+      }
+    }
+
+    // --- NAVIGATION TABS ---
+    function switchTab(tabName) {
+      ['matchs', 'sondage', 'badges', 'joueurs'].forEach(t => {
+        const content = document.getElementById(`content-${t}`);
+        const tabBtn = document.getElementById(`tab-${t}`);
+
+        if (content && tabBtn) {
+          if (t === tabName) {
+            content.classList.remove('hidden');
+            tabBtn.classList.add('border-pitch-600', 'text-pitch-700');
+            tabBtn.classList.remove('border-transparent');
+          } else {
+            content.classList.add('hidden');
+            tabBtn.classList.remove('border-pitch-600', 'text-pitch-700');
+            tabBtn.classList.add('border-transparent');
+          }
+        }
+      });
+    }
+
+    // --- TOAST NOTIFICATIONS ---
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const msg = document.getElementById('toastMsg');
+      if (!toast || !msg) return;
+      
+      msg.innerText = message;
+
+      toast.classList.remove('opacity-0', 'pointer-events-none');
+      toast.classList.add('opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0', 'pointer-events-none');
+      }, 2500);
+    }
+  </script>
+</body>
+</html>
