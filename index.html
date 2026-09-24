@@ -866,7 +866,7 @@
       showToast("Match créé manuellement !");
     }
 
-function renderMatchs() {
+    function renderMatchs() {
       const container = document.getElementById('matchsListContainer');
       container.innerHTML = '';
 
@@ -881,9 +881,9 @@ function renderMatchs() {
         return;
       }
 
-      // Fonction pour convertir la date texte en valeur numérique pour le tri
-      const parseMatchDate = (m) => {
-        if (m.timestamp) return m.timestamp;
+      // Fonction pour convertir la date texte en objet Date valide
+      const parseMatchDateObj = (m) => {
+        if (m.timestamp) return new Date(m.timestamp);
         
         const months = {
           'janvier': 0, 'février': 1, 'fevrier': 1, 'mars': 2, 'avril': 3, 'mai': 4, 'juin': 5,
@@ -893,12 +893,10 @@ function renderMatchs() {
         const str = (m.dateDisplay || '').toLowerCase();
         const now = new Date();
 
-        // Gestion des mots-clés relatifs
-        if (str.includes('aujourd\'hui') || str.includes('ce soir')) return now.getTime();
-        if (str.includes('demain')) return now.getTime() + 86400000;
-        if (str.includes('prochain')) return now.getTime() + 86400000 * 3;
+        if (str.includes("aujourd'hui") || str.includes('ce soir')) return now;
+        if (str.includes('demain')) return new Date(now.getTime() + 86400000);
+        if (str.includes('prochain')) return new Date(now.getTime() + 86400000 * 3);
 
-        // Extraction du jour, mois, heure (ex: "Mardi 14 Octobre" à "19h30")
         const dayMatch = str.match(/\d+/);
         const day = dayMatch ? parseInt(dayMatch[0]) : now.getDate();
         
@@ -920,129 +918,209 @@ function renderMatchs() {
         }
 
         let year = now.getFullYear();
-        // Si le mois est déjà passé dans l'année, on bascule sur l'année suivante
         if (month < now.getMonth() || (month === now.getMonth() && day < now.getDate())) {
           year++;
         }
 
-        return new Date(year, month, day, hours, minutes).getTime();
+        return new Date(year, month, day, hours, minutes);
       };
 
-      // Tri chronologique des matchs
-      const sortedMatchs = [...appData.matchs].sort((a, b) => parseMatchDate(a) - parseMatchDate(b));
+      const now = new Date();
+      const matchAvenir = [];
+      const matchPasses = [];
 
-      sortedMatchs.forEach(match => {
-        const player = getCurrentPlayer();
-        const myId = player ? player.id : null;
+      // Séparation entre matchs à venir et matchs passés
+      appData.matchs.forEach(m => {
+        const d = parseMatchDateObj(m);
+        if (d < now) {
+          matchPasses.push({ match: m, dateObj: d });
+        } else {
+          matchAvenir.push({ match: m, dateObj: d });
+        }
+      });
 
-        if (!match.titulaires) match.titulaires = [];
-        if (!match.waitingList) match.waitingList = [];
+      // Tri chronologique des matchs à venir
+      matchAvenir.sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
 
-        const isTitulaire = myId && match.titulaires.includes(myId);
-        const isWaiting = myId && match.waitingList.includes(myId);
+      // 1. Affichage des matchs à venir
+      if (matchAvenir.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white rounded-2xl p-6 text-center border border-slate-200">
+            <i class="fa-solid fa-calendar-xmark text-slate-300 text-3xl mb-2"></i>
+            <p class="text-sm font-bold text-slate-700">Aucun match à venir</p>
+            <p class="text-xs text-slate-400 mt-0.5">Validez le sondage pour planifier une partie !</p>
+          </div>
+        `;
+      } else {
+        matchAvenir.forEach(item => {
+          container.appendChild(createMatchCard(item.match));
+        });
+      }
 
-        const isReserved = match.reservationStatus === 'RESERVED' || match.isReserved === true;
+      // 2. Affichage des archives regroupées par dossier mensuel
+      if (matchPasses.length > 0) {
+        // Tri anti-chronologique pour les archives (les plus récents en premier)
+        matchPasses.sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
 
-        const card = document.createElement('div');
-        card.className = "bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden";
+        // Regroupement par "Mois Année" (ex: "Octobre 2023")
+        const archivesParMois = {};
+        matchPasses.forEach(item => {
+          const moisCle = item.dateObj.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+          const moisFormatted = moisCle.charAt(0).toUpperCase() + moisCle.slice(1);
+          if (!archivesParMois[moisFormatted]) {
+            archivesParMois[moisFormatted] = [];
+          }
+          archivesParMois[moisFormatted].push(item.match);
+        });
 
-        card.innerHTML = `
-          <div class="p-4 space-y-3">
-            <div class="flex items-start justify-between">
-              <div>
-                <div class="flex items-center space-x-2">
-                  <span class="font-display font-bold text-slate-900 text-base">${match.dateDisplay}</span>
-                  <span class="bg-slate-100 text-slate-700 font-bold text-xs px-2 py-0.5 rounded-lg">${match.timeDisplay}</span>
-                </div>
-                <div class="mt-1 flex items-center space-x-1.5">
-                  ${getStatusBadge(isReserved)}
-                </div>
+        const archivesWrapper = document.createElement('div');
+        archivesWrapper.className = 'pt-6 border-t border-slate-200 space-y-3';
+        archivesWrapper.innerHTML = `<h3 class="font-display font-bold text-sm text-slate-700 flex items-center space-x-1.5"><i class="fa-solid fa-box-archive text-slate-400"></i><span>Archives des matchs passés</span></h3>`;
+
+        Object.keys(archivesParMois).forEach(mois => {
+          const folderCard = document.createElement('div');
+          folderCard.className = 'bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden';
+
+          const matchesHTML = archivesParMois[mois].map(m => `
+            <div class="p-3 bg-white rounded-xl border border-slate-100 shadow-sm space-y-1">
+              <div class="flex justify-between items-center text-xs font-bold text-slate-800">
+                <span>⚽ ${m.dateDisplay} - ${m.timeDisplay}</span>
+                <button onclick="deleteMatch('${m.id}')" class="text-slate-300 hover:text-red-500 transition"><i class="fa-solid fa-trash-can text-xs"></i></button>
               </div>
-
-              <div class="flex items-center space-x-1">
-                <button onclick="toggleReservation('${match.id}')" class="p-1.5 rounded-lg border text-xs font-semibold transition ${isReserved ? 'bg-pitch-50 border-pitch-200 text-pitch-700 hover:bg-pitch-100' : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-pitch-600 hover:bg-slate-100'}" title="${isReserved ? 'Annuler la réservation' : 'Valider la réservation'}">
-                  <i class="fa-solid ${isReserved ? 'fa-circle-check text-pitch-600' : 'fa-calendar-check'}"></i>
-                </button>
-                <button onclick="deleteMatch('${match.id}')" class="text-slate-400 hover:text-red-500 p-1.5 transition" title="Supprimer le match">
-                  <i class="fa-solid fa-trash-can text-sm"></i>
-                </button>
-              </div>
+              <div class="text-[11px] text-slate-500">Titulaires (${m.titulaires ? m.titulaires.length : 0})</div>
             </div>
+          `).join('');
 
+          folderCard.innerHTML = `
+            <button onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.chevron-icon').classList.toggle('rotate-180')" class="w-full p-3.5 flex items-center justify-between text-left hover:bg-slate-100/60 transition">
+              <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-folder text-pitch-600"></i>
+                <span class="font-display font-bold text-xs text-slate-800">${mois}</span>
+                <span class="bg-slate-200 text-slate-600 text-[10px] font-bold px-1.5 py-0.2 rounded-full">${archivesParMois[mois].length}</span>
+              </div>
+              <i class="fa-solid fa-chevron-down chevron-icon text-xs text-slate-400 transition-transform duration-200"></i>
+            </button>
+            <div class="p-3 pt-0 space-y-2 hidden">
+              ${matchesHTML}
+            </div>
+          `;
+
+          archivesWrapper.appendChild(folderCard);
+        });
+
+        container.appendChild(archivesWrapper);
+      }
+    }
+
+    // Fonction auxiliaire pour générer la carte HTML d'un match à venir
+    function createMatchCard(match) {
+      const player = getCurrentPlayer();
+      const myId = player ? player.id : null;
+
+      if (!match.titulaires) match.titulaires = [];
+      if (!match.waitingList) match.waitingList = [];
+
+      const isTitulaire = myId && match.titulaires.includes(myId);
+      const isWaiting = myId && match.waitingList.includes(myId);
+      const isReserved = match.reservationStatus === 'RESERVED' || match.isReserved === true;
+
+      const card = document.createElement('div');
+      card.className = "bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden";
+
+      card.innerHTML = `
+        <div class="p-4 space-y-3">
+          <div class="flex items-start justify-between">
             <div>
-              <div class="flex justify-between text-xs font-bold mb-1">
-                <span class="text-slate-600">Joueurs Inscrits (${match.titulaires.length}/10)</span>
-                <span class="${match.titulaires.length >= 10 ? 'text-pitch-600' : 'text-slate-400'}">
-                  ${match.titulaires.length >= 10 ? 'COMPLET' : (10 - match.titulaires.length) + ' place(s) restante(s)'}
-                </span>
+              <div class="flex items-center space-x-2">
+                <span class="font-display font-bold text-slate-900 text-base">${match.dateDisplay}</span>
+                <span class="bg-slate-100 text-slate-700 font-bold text-xs px-2 py-0.5 rounded-lg">${match.timeDisplay}</span>
               </div>
-              <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden flex">
-                <div class="bg-pitch-600 h-full transition-all duration-300" style="width: ${(match.titulaires.length / 10) * 100}%"></div>
+              <div class="mt-1 flex items-center space-x-1.5">
+                ${getStatusBadge(isReserved)}
               </div>
             </div>
 
-            <div class="space-y-1.5 pt-1">
-              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Titulaires (10 max) :</span>
+            <div class="flex items-center space-x-1">
+              <button onclick="toggleReservation('${match.id}')" class="p-1.5 rounded-lg border text-xs font-semibold transition ${isReserved ? 'bg-pitch-50 border-pitch-200 text-pitch-700 hover:bg-pitch-100' : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-pitch-600 hover:bg-slate-100'}" title="${isReserved ? 'Annuler la réservation' : 'Valider la réservation'}">
+                <i class="fa-solid ${isReserved ? 'fa-circle-check text-pitch-600' : 'fa-calendar-check'}"></i>
+              </button>
+              <button onclick="deleteMatch('${match.id}')" class="text-slate-400 hover:text-red-500 p-1.5 transition" title="Supprimer le match">
+                <i class="fa-solid fa-trash-can text-sm"></i>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-1">
+              <span class="text-slate-600">Joueurs Inscrits (${match.titulaires.length}/10)</span>
+              <span class="${match.titulaires.length >= 10 ? 'text-pitch-600' : 'text-slate-400'}">
+                ${match.titulaires.length >= 10 ? 'COMPLET' : (10 - match.titulaires.length) + ' place(s) restante(s)'}
+              </span>
+            </div>
+            <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden flex">
+              <div class="bg-pitch-600 h-full transition-all duration-300" style="width: ${(match.titulaires.length / 10) * 100}%"></div>
+            </div>
+          </div>
+
+          <div class="space-y-1.5 pt-1">
+            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Titulaires (10 max) :</span>
+            <div class="flex flex-wrap gap-1.5">
+              ${match.titulaires.length === 0 ? '<span class="text-xs text-slate-400 italic">Personne pour l\'instant</span>' : ''}
+              ${match.titulaires.map(id => {
+                const p = appData.players.find(x => x.id === id);
+                const pName = p ? p.name : 'Inconnu';
+                return `<span class="bg-pitch-50 border border-pitch-200 text-pitch-900 font-medium text-xs px-2.5 py-1 rounded-lg flex items-center space-x-1.5">
+                  ${p && p.avatar ? `<img src="${p.avatar}" class="w-4 h-4 rounded-full object-cover">` : '<span class="text-[10px]">⚽</span>'}
+                  <span>${pName}</span>
+                </span>`;
+              }).join('')}
+            </div>
+          </div>
+
+          ${match.waitingList.length > 0 ? `
+            <div class="space-y-1.5 pt-2 border-t border-slate-100">
+              <span class="text-[11px] font-bold text-amber-600 uppercase tracking-wider flex items-center space-x-1">
+                <i class="fa-solid fa-hourglass-half"></i>
+                <span>Liste d'attente (${match.waitingList.length}) :</span>
+              </span>
               <div class="flex flex-wrap gap-1.5">
-                ${match.titulaires.length === 0 ? '<span class="text-xs text-slate-400 italic">Personne pour l\'instant</span>' : ''}
-                ${match.titulaires.map(id => {
+                ${match.waitingList.map((id, index) => {
                   const p = appData.players.find(x => x.id === id);
                   const pName = p ? p.name : 'Inconnu';
-                  return `<span class="bg-pitch-50 border border-pitch-200 text-pitch-900 font-medium text-xs px-2.5 py-1 rounded-lg flex items-center space-x-1.5">
-                    ${p && p.avatar ? `<img src="${p.avatar}" class="w-4 h-4 rounded-full object-cover">` : '<span class="text-[10px]">⚽</span>'}
+                  return `<span class="bg-amber-50 border border-amber-200 text-amber-900 font-medium text-xs px-2 py-0.5 rounded-lg flex items-center space-x-1">
+                    <span>#${index + 1}</span>
                     <span>${pName}</span>
                   </span>`;
                 }).join('')}
               </div>
             </div>
+          ` : ''}
 
-            ${match.waitingList.length > 0 ? `
-              <div class="space-y-1.5 pt-2 border-t border-slate-100">
-                <span class="text-[11px] font-bold text-amber-600 uppercase tracking-wider flex items-center space-x-1">
-                  <i class="fa-solid fa-hourglass-half"></i>
-                  <span>Liste d'attente (${match.waitingList.length}) :</span>
-                </span>
-                <div class="flex flex-wrap gap-1.5">
-                  ${match.waitingList.map((id, index) => {
-                    const p = appData.players.find(x => x.id === id);
-                    const pName = p ? p.name : 'Inconnu';
-                    return `<span class="bg-amber-50 border border-amber-200 text-amber-900 font-medium text-xs px-2 py-0.5 rounded-lg flex items-center space-x-1">
-                      <span>#${index + 1}</span>
-                      <span>${pName}</span>
-                    </span>`;
-                  }).join('')}
-                </div>
-              </div>
-            ` : ''}
-
-            <div class="pt-3 border-t border-slate-100 flex flex-col space-y-2">
-              <div class="flex space-x-2">
-                ${!isTitulaire && !isWaiting ? `
-                  <button onclick="registerForMatch('${match.id}')" class="flex-1 bg-pitch-600 hover:bg-pitch-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm flex items-center justify-center space-x-1.5">
-                    <i class="fa-solid fa-user-plus"></i>
-                    <span>S'inscrire au match</span>
-                  </button>
-                ` : `
-                  <button onclick="unregisterFromMatch('${match.id}')" class="flex-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center space-x-1.5">
-                    <i class="fa-solid fa-user-minus"></i>
-                    <span>Se désinscrire (${isTitulaire ? 'Titulaire' : 'En attente'})</span>
-                  </button>
-                `}
-              </div>
-
-              ${isTitulaire ? `
-                <button onclick="sendWhatsappReminder('${match.dateDisplay}', '${match.timeDisplay}')" class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold py-2 rounded-xl text-xs flex items-center justify-center space-x-1.5">
-                  <i class="fa-brands fa-whatsapp text-sm"></i>
-                  <span>Envoyer un rappel WhatsApp</span>
+          <div class="pt-3 border-t border-slate-100 flex flex-col space-y-2">
+            <div class="flex space-x-2">
+              ${!isTitulaire && !isWaiting ? `
+                <button onclick="registerForMatch('${match.id}')" class="flex-1 bg-pitch-600 hover:bg-pitch-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm flex items-center justify-center space-x-1.5">
+                  <i class="fa-solid fa-user-plus"></i>
+                  <span>S'inscrire au match</span>
                 </button>
-              ` : ''}
+              ` : `
+                <button onclick="unregisterFromMatch('${match.id}')" class="flex-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center space-x-1.5">
+                  <i class="fa-solid fa-user-minus"></i>
+                  <span>Se désinscrire (${isTitulaire ? 'Titulaire' : 'En attente'})</span>
+                </button>
+              `}
             </div>
 
+            ${isTitulaire ? `
+              <button onclick="sendWhatsappReminder('${match.dateDisplay}', '${match.timeDisplay}')" class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold py-2 rounded-xl text-xs flex items-center justify-center space-x-1.5">
+                <i class="fa-brands fa-whatsapp text-sm"></i>
+                <span>Envoyer un rappel WhatsApp</span>
+              </button>
+            ` : ''}
           </div>
-        `;
-
-        container.appendChild(card);
-      });
+        </div>
+      `;
+      return card;
     }
 
     function getStatusBadge(isReserved) {
@@ -1187,7 +1265,7 @@ function renderMatchs() {
 
         const card = document.createElement('div');
         card.className = `p-3.5 rounded-2xl border transition ${isUnlocked ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-50 border-slate-200/60 opacity-60'} flex flex-col justify-between space-y-2 relative overflow-hidden group cursor-pointer`;
-        card.title = `${b.title} : ${b.desc}`; // Aperçu rapide de la description au survol / appui
+        card.title = `${b.title} : ${b.desc}`;
 
         card.innerHTML = `
           <div class="flex items-start justify-between">
@@ -1220,7 +1298,6 @@ function renderMatchs() {
 
       if (!appData.players) return;
 
-      // Tri des joueurs par nombre de présences (matchs joués) décroissant
       const sortedPlayers = [...appData.players].sort((a, b) => {
         return getPlayerMatchCount(b.id) - getPlayerMatchCount(a.id);
       });
@@ -1253,7 +1330,6 @@ function renderMatchs() {
             </div>
           </div>
 
-          <!-- Badges du joueur avec tooltips -->
           <div class="flex flex-wrap gap-1 pt-1 border-t border-slate-100">
             ${playerBadges.length === 0 ? '<span class="text-[10px] text-slate-400 italic">Aucun badge</span>' : ''}
             ${playerBadges.map(bId => {
@@ -1279,20 +1355,17 @@ function renderMatchs() {
       }
 
       if (confirm("Êtes-vous sûr de vouloir supprimer définitivement ce joueur ?")) {
-        // Retirer des matchs
         if (appData.matchs) {
           appData.matchs.forEach(m => {
             if (m.titulaires) m.titulaires = m.titulaires.filter(id => id !== playerId);
             if (m.waitingList) m.waitingList = m.waitingList.filter(id => id !== playerId);
           });
         }
-        // Retirer des votes sondage
         if (appData.votes) {
           Object.keys(appData.votes).forEach(sKey => {
             appData.votes[sKey] = appData.votes[sKey].filter(id => id !== playerId);
           });
         }
-        // Retirer de la liste
         appData.players = appData.players.filter(p => p.id !== playerId);
 
         if (appData.currentUserId === playerId && appData.players.length > 0) {
@@ -1321,7 +1394,6 @@ function renderMatchs() {
           player.waitingListPerMonth = 0;
           player.isIncrevable = false;
 
-          // Retirer des matchs archivés/existants s'il y a lieu pour réinitialiser son compteur
           if (appData.matchs) {
             appData.matchs.forEach(m => {
               if (m.titulaires) m.titulaires = m.titulaires.filter(id => id !== playerId);
@@ -1355,7 +1427,7 @@ function renderMatchs() {
           id: 'p_' + Date.now(),
           name: name,
           avatar: avatarBase64,
-          createdAt: Date.now(), // Date de création pour calculer l'ancienneté (2 mois minimum)
+          createdAt: Date.now(),
           streak: 0,
           unsubscribesPerMonth: 0,
           waitingListPerMonth: 0,
