@@ -38,7 +38,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <!-- Firebase CDN -->
+  <!-- Firebase CDN (compat v8) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -337,9 +337,18 @@
 
   <!-- JavaScript Logic -->
   <script>
-    // --- APP STATE & INITIALIZATION ---
-    const STORAGE_KEY = 'foot5_app_state_v1';
+    // --- FIREBASE CONFIGURATION ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyAMBEEvo5BxEKHc1T4_L8xMtId518pI3eQ",
+      authDomain: "five-morangis.firebaseapp.com",
+      databaseURL: "https://five-morangis-default-rtdb.firebaseio.com",
+      projectId: "five-morangis",
+      storageBucket: "five-morangis.firebasestorage.app",
+      messagingSenderId: "933194494472",
+      appId: "1:933194494472:web:b03e3a831714a3358317bd"
+    };
 
+    const STORAGE_KEY = 'foot5_app_state_v1';
     let isFirebaseConnected = false;
     let db = null;
 
@@ -356,14 +365,14 @@
       { id: 'b_retardataire', icon: '⏳', title: 'Toujours à la bourre', desc: 'Se retrouve en liste d\'attente au moins 1 fois par mois', color: 'text-orange-600 bg-orange-50' }
     ];
 
-    // Structure de données initiale si vide
+    // Structure de données initiale
     let appData = {
       players: [
         { 
           id: 'p1', 
           name: 'Alex', 
           avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80', 
-          createdAt: Date.now() - (65 * 24 * 60 * 60 * 1000), // > 2 mois
+          createdAt: Date.now() - (65 * 24 * 60 * 60 * 1000),
           streak: 4,
           unsubscribesPerMonth: 0,
           waitingListPerMonth: 0,
@@ -383,7 +392,7 @@
           id: 'p3', 
           name: 'Romain', 
           avatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100&auto=format&fit=crop&q=80', 
-          createdAt: Date.now() - (10 * 24 * 60 * 60 * 1000), // Moins de 2 mois
+          createdAt: Date.now() - (10 * 24 * 60 * 60 * 1000),
           streak: 0,
           unsubscribesPerMonth: 0,
           waitingListPerMonth: 0,
@@ -401,8 +410,8 @@
         }
       ],
       currentUserId: 'p1',
-      votes: {}, // Key: slotKey (ex: "2023-10-25_19:00_1h"), Value: Array of playerIds (Ordre de réponse conservé)
-      matchs: [] // Array of match objects
+      votes: {},
+      matchs: []
     };
 
     // --- INITIALISATION AU CHARGEMENT ---
@@ -416,7 +425,10 @@
     // --- FIREBASE SYNC ---
     function initFirebase() {
       try {
-        if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+        if (typeof firebase !== 'undefined') {
+          if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+          }
           db = firebase.database();
           isFirebaseConnected = true;
 
@@ -430,7 +442,7 @@
           });
         }
       } catch (e) {
-        console.log("Mode Local uniquement");
+        console.log("Mode Local uniquement", e);
       }
     }
 
@@ -480,26 +492,20 @@
       if (!player.createdAt) return 0;
       const diffMs = Date.now() - player.createdAt;
       const diffDays = diffMs / (1000 * 60 * 60 * 24);
-      return diffDays / 30; // Nombre de mois approximatif
+      return diffDays / 30;
     }
 
     function calculatePlayerBadges(player) {
       const months = getPlayerMonthsActive(player);
-      
-      // Condition stricte : au moins 2 mois d'utilisation
-      if (months < 2) {
-        return [];
-      }
+      if (months < 2) return [];
 
       const totalMatchs = appData.matchs ? appData.matchs.length : 0;
       const matchPlayed = getPlayerMatchCount(player.id);
-
       const presenceRate = totalMatchs > 0 ? (matchPlayed / totalMatchs) : 0;
       const presencesPerMonth = months > 0 ? (matchPlayed / months) : 0;
       
       const unlockedIds = [];
 
-      // Déduction des badges
       if (presenceRate >= 0.95 && totalMatchs > 0) unlockedIds.push('b_legende');
       else if (presenceRate >= 0.75 && totalMatchs > 0) unlockedIds.push('b_titulaire');
       else if (presenceRate >= 0.45 && presenceRate < 0.60) unlockedIds.push('b_remplacant');
@@ -615,19 +621,14 @@
       if (!date || !time || !duration) return;
       const slotKey = `${date}_${time}_${duration}`;
 
-      if (!appData.votes) {
-        appData.votes = {};
-      }
-
-      if (!appData.votes[slotKey]) {
-        appData.votes[slotKey] = [];
-      }
+      if (!appData.votes) appData.votes = {};
+      if (!appData.votes[slotKey]) appData.votes[slotKey] = [];
 
       const currentPlayer = getCurrentPlayer();
       const currentPlayerId = currentPlayer ? currentPlayer.id : 'p1';
 
       if (!appData.votes[slotKey].includes(currentPlayerId)) {
-        appData.votes[slotKey].push(currentPlayerId); // L'ordre chronologique de réponse est conservé
+        appData.votes[slotKey].push(currentPlayerId);
         showToast("Sondage créé / Dispo ajoutée !");
       } else {
         showToast("Tu as déjà répondu présent à ce sondage !");
@@ -648,7 +649,7 @@
         appData.votes[slotKey].splice(index, 1);
         showToast("Disponibilité retirée");
       } else {
-        appData.votes[slotKey].push(currentPlayerId); // Ajouté à la fin (respect de l'ordre)
+        appData.votes[slotKey].push(currentPlayerId);
         showToast("Disponibilité ajoutée !");
       }
 
@@ -685,11 +686,9 @@
       const options = { weekday: 'short', day: 'numeric', month: 'short' };
       const formattedDate = !isNaN(dateObj.getTime()) ? dateObj.toLocaleDateString('fr-FR', options) : dateStr;
 
-      // Les 10 premiers répondants deviennent titulaires, les suivants en liste d'attente
       const titulaires = voters.slice(0, 10);
       const waitingList = voters.slice(10);
 
-      // Met à jour la statistique de liste d'attente pour ceux qui y sont basculés
       waitingList.forEach(wId => {
         const p = appData.players.find(x => x.id === wId);
         if (p) {
@@ -712,10 +711,7 @@
       if (!appData.matchs) appData.matchs = [];
       appData.matchs.push(newMatch);
 
-      // Supprimer le sondage après sa validation
-      if (appData.votes) {
-        delete appData.votes[slotKey];
-      }
+      if (appData.votes) delete appData.votes[slotKey];
 
       syncData();
       switchTab('matchs');
@@ -778,7 +774,6 @@
             </div>
           </div>
 
-          <!-- Barre de progression -->
           <div>
             <div class="flex justify-between text-[11px] font-bold text-slate-500 mb-1">
               <span>Objectif 10 joueurs</span>
@@ -789,7 +784,6 @@
             </div>
           </div>
 
-          <!-- Liste Ordre des répondants -->
           <div class="flex flex-wrap gap-1.5 pt-1">
             ${voters.length === 0 ? '<span class="text-xs text-slate-400 italic">Aucune réponse pour le moment</span>' : ''}
             ${voters.map((id, index) => {
@@ -805,7 +799,6 @@
             }).join('')}
           </div>
 
-          <!-- Boutons d'action -->
           <div class="pt-2 flex flex-col space-y-2 border-t border-slate-100">
             <button onclick="toggleVote('${slotKey}')" class="w-full py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition ${hasVoted ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'}">
               <i class="fa-solid ${hasVoted ? 'fa-user-minus' : 'fa-user-plus'}"></i>
@@ -823,7 +816,7 @@
       });
     }
 
-    // --- TAB MATCHS ---
+    // --- TAB MATCHS ET ARCHIVES ---
     function openCreateMatchModal() {
       document.getElementById('createMatchModal').classList.remove('hidden');
     }
@@ -881,7 +874,6 @@
         return;
       }
 
-      // Fonction pour convertir la date texte en objet Date valide
       const parseMatchDateObj = (m) => {
         if (m.timestamp) return new Date(m.timestamp);
         
@@ -929,7 +921,6 @@
       const matchAvenir = [];
       const matchPasses = [];
 
-      // Séparation entre matchs à venir et matchs passés
       appData.matchs.forEach(m => {
         const d = parseMatchDateObj(m);
         if (d < now) {
@@ -939,10 +930,8 @@
         }
       });
 
-      // Tri chronologique des matchs à venir
       matchAvenir.sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
 
-      // 1. Affichage des matchs à venir
       if (matchAvenir.length === 0) {
         container.innerHTML = `
           <div class="bg-white rounded-2xl p-6 text-center border border-slate-200">
@@ -957,12 +946,9 @@
         });
       }
 
-      // 2. Affichage des archives regroupées par dossier mensuel
       if (matchPasses.length > 0) {
-        // Tri anti-chronologique pour les archives (les plus récents en premier)
         matchPasses.sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
 
-        // Regroupement par "Mois Année" (ex: "Octobre 2023")
         const archivesParMois = {};
         matchPasses.forEach(item => {
           const moisCle = item.dateObj.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
@@ -1012,7 +998,6 @@
       }
     }
 
-    // Fonction auxiliaire pour générer la carte HTML d'un match à venir
     function createMatchCard(match) {
       const player = getCurrentPlayer();
       const myId = player ? player.id : null;
@@ -1243,17 +1228,11 @@
       const flamesEl = document.getElementById('streakFlames');
       if (player) {
         const streakVal = player.streak || 0;
-        if (streakEl) {
-          streakEl.innerText = streakVal;
-        }
+        if (streakEl) streakEl.innerText = streakVal;
         if (flamesEl) {
-          if (streakVal >= 30) {
-            flamesEl.innerText = '🔥🔥🔥';
-          } else if (streakVal >= 10) {
-            flamesEl.innerText = '🔥🔥';
-          } else {
-            flamesEl.innerText = '🔥';
-          }
+          if (streakVal >= 30) flamesEl.innerText = '🔥🔥🔥';
+          else if (streakVal >= 10) flamesEl.innerText = '🔥🔥';
+          else flamesEl.innerText = '🔥';
         }
       }
 
