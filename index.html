@@ -38,7 +38,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <!-- Firebase CDN (compat v8) -->
+  <!-- Firebase CDN -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -126,7 +126,7 @@
   <!-- Main Content Area -->
   <main class="flex-1 p-4 pb-20 overflow-y-auto space-y-4">
 
-    <!-- TAB 1: MATCHS VALIDÉS -->
+    <!-- TAB 1: MATCHS VALIDÉS & ARCHIVES -->
     <section id="content-matchs" class="space-y-4">
       <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
         <div>
@@ -141,6 +141,20 @@
 
       <div id="matchsListContainer" class="space-y-3">
         <!-- Injecté par JS -->
+      </div>
+
+      <!-- Section Archives -->
+      <div class="pt-4 border-t border-slate-200 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="font-display font-bold text-sm text-slate-800 flex items-center space-x-2">
+            <i class="fa-solid fa-box-archive text-slate-400"></i>
+            <span>Archives des matchs</span>
+          </h3>
+          <span class="text-[11px] text-slate-400">Classés par mois</span>
+        </div>
+        <div id="archivesContainer" class="space-y-2">
+          <!-- Injecté par JS -->
+        </div>
       </div>
     </section>
 
@@ -337,18 +351,9 @@
 
   <!-- JavaScript Logic -->
   <script>
-    // --- FIREBASE CONFIGURATION ---
-    const firebaseConfig = {
-      apiKey: "AIzaSyAMBEEvo5BxEKHc1T4_L8xMtId518pI3eQ",
-      authDomain: "five-morangis.firebaseapp.com",
-      databaseURL: "https://five-morangis-default-rtdb.firebaseio.com",
-      projectId: "five-morangis",
-      storageBucket: "five-morangis.firebasestorage.app",
-      messagingSenderId: "933194494472",
-      appId: "1:933194494472:web:b03e3a831714a3358317bd"
-    };
-
+    // --- APP STATE & INITIALIZATION ---
     const STORAGE_KEY = 'foot5_app_state_v1';
+
     let isFirebaseConnected = false;
     let db = null;
 
@@ -365,14 +370,14 @@
       { id: 'b_retardataire', icon: '⏳', title: 'Toujours à la bourre', desc: 'Se retrouve en liste d\'attente au moins 1 fois par mois', color: 'text-orange-600 bg-orange-50' }
     ];
 
-    // Structure de données initiale
+    // Structure de données initiale si vide
     let appData = {
       players: [
         { 
           id: 'p1', 
           name: 'Alex', 
           avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80', 
-          createdAt: Date.now() - (65 * 24 * 60 * 60 * 1000),
+          createdAt: Date.now() - (65 * 24 * 60 * 60 * 1000), // > 2 mois
           streak: 4,
           unsubscribesPerMonth: 0,
           waitingListPerMonth: 0,
@@ -392,7 +397,7 @@
           id: 'p3', 
           name: 'Romain', 
           avatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100&auto=format&fit=crop&q=80', 
-          createdAt: Date.now() - (10 * 24 * 60 * 60 * 1000),
+          createdAt: Date.now() - (10 * 24 * 60 * 60 * 1000), // Moins de 2 mois
           streak: 0,
           unsubscribesPerMonth: 0,
           waitingListPerMonth: 0,
@@ -410,8 +415,8 @@
         }
       ],
       currentUserId: 'p1',
-      votes: {},
-      matchs: []
+      votes: {}, // Key: slotKey (ex: "2023-10-25_19:00_1h"), Value: Array of playerIds (Ordre de réponse conservé)
+      matchs: [] // Array of match objects
     };
 
     // --- INITIALISATION AU CHARGEMENT ---
@@ -425,10 +430,7 @@
     // --- FIREBASE SYNC ---
     function initFirebase() {
       try {
-        if (typeof firebase !== 'undefined') {
-          if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-          }
+        if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
           db = firebase.database();
           isFirebaseConnected = true;
 
@@ -442,7 +444,7 @@
           });
         }
       } catch (e) {
-        console.log("Mode Local uniquement", e);
+        console.log("Mode Local uniquement");
       }
     }
 
@@ -492,20 +494,26 @@
       if (!player.createdAt) return 0;
       const diffMs = Date.now() - player.createdAt;
       const diffDays = diffMs / (1000 * 60 * 60 * 24);
-      return diffDays / 30;
+      return diffDays / 30; // Nombre de mois approximatif
     }
 
     function calculatePlayerBadges(player) {
       const months = getPlayerMonthsActive(player);
-      if (months < 2) return [];
+      
+      // Condition stricte : au moins 2 mois d'utilisation
+      if (months < 2) {
+        return [];
+      }
 
       const totalMatchs = appData.matchs ? appData.matchs.length : 0;
       const matchPlayed = getPlayerMatchCount(player.id);
+
       const presenceRate = totalMatchs > 0 ? (matchPlayed / totalMatchs) : 0;
       const presencesPerMonth = months > 0 ? (matchPlayed / months) : 0;
       
       const unlockedIds = [];
 
+      // Déduction des badges
       if (presenceRate >= 0.95 && totalMatchs > 0) unlockedIds.push('b_legende');
       else if (presenceRate >= 0.75 && totalMatchs > 0) unlockedIds.push('b_titulaire');
       else if (presenceRate >= 0.45 && presenceRate < 0.60) unlockedIds.push('b_remplacant');
@@ -621,14 +629,19 @@
       if (!date || !time || !duration) return;
       const slotKey = `${date}_${time}_${duration}`;
 
-      if (!appData.votes) appData.votes = {};
-      if (!appData.votes[slotKey]) appData.votes[slotKey] = [];
+      if (!appData.votes) {
+        appData.votes = {};
+      }
+
+      if (!appData.votes[slotKey]) {
+        appData.votes[slotKey] = [];
+      }
 
       const currentPlayer = getCurrentPlayer();
       const currentPlayerId = currentPlayer ? currentPlayer.id : 'p1';
 
       if (!appData.votes[slotKey].includes(currentPlayerId)) {
-        appData.votes[slotKey].push(currentPlayerId);
+        appData.votes[slotKey].push(currentPlayerId); // L'ordre chronologique de réponse est conservé
         showToast("Sondage créé / Dispo ajoutée !");
       } else {
         showToast("Tu as déjà répondu présent à ce sondage !");
@@ -649,7 +662,7 @@
         appData.votes[slotKey].splice(index, 1);
         showToast("Disponibilité retirée");
       } else {
-        appData.votes[slotKey].push(currentPlayerId);
+        appData.votes[slotKey].push(currentPlayerId); // Ajouté à la fin (respect de l'ordre)
         showToast("Disponibilité ajoutée !");
       }
 
@@ -686,9 +699,11 @@
       const options = { weekday: 'short', day: 'numeric', month: 'short' };
       const formattedDate = !isNaN(dateObj.getTime()) ? dateObj.toLocaleDateString('fr-FR', options) : dateStr;
 
+      // Les 10 premiers répondants deviennent titulaires, les suivants en liste d'attente
       const titulaires = voters.slice(0, 10);
       const waitingList = voters.slice(10);
 
+      // Met à jour la statistique de liste d'attente pour ceux qui y sont basculés
       waitingList.forEach(wId => {
         const p = appData.players.find(x => x.id === wId);
         if (p) {
@@ -711,7 +726,10 @@
       if (!appData.matchs) appData.matchs = [];
       appData.matchs.push(newMatch);
 
-      if (appData.votes) delete appData.votes[slotKey];
+      // Supprimer le sondage après sa validation
+      if (appData.votes) {
+        delete appData.votes[slotKey];
+      }
 
       syncData();
       switchTab('matchs');
@@ -774,6 +792,7 @@
             </div>
           </div>
 
+          <!-- Barre de progression -->
           <div>
             <div class="flex justify-between text-[11px] font-bold text-slate-500 mb-1">
               <span>Objectif 10 joueurs</span>
@@ -784,6 +803,7 @@
             </div>
           </div>
 
+          <!-- Liste Ordre des répondants -->
           <div class="flex flex-wrap gap-1.5 pt-1">
             ${voters.length === 0 ? '<span class="text-xs text-slate-400 italic">Aucune réponse pour le moment</span>' : ''}
             ${voters.map((id, index) => {
@@ -799,6 +819,7 @@
             }).join('')}
           </div>
 
+          <!-- Boutons d'action -->
           <div class="pt-2 flex flex-col space-y-2 border-t border-slate-100">
             <button onclick="toggleVote('${slotKey}')" class="w-full py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition ${hasVoted ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'}">
               <i class="fa-solid ${hasVoted ? 'fa-user-minus' : 'fa-user-plus'}"></i>
@@ -816,7 +837,7 @@
       });
     }
 
-    // --- TAB MATCHS ET ARCHIVES ---
+    // --- TAB MATCHS ---
     function openCreateMatchModal() {
       document.getElementById('createMatchModal').classList.remove('hidden');
     }
@@ -861,7 +882,9 @@
 
     function renderMatchs() {
       const container = document.getElementById('matchsListContainer');
+      const archivesContainer = document.getElementById('archivesContainer');
       container.innerHTML = '';
+      if (archivesContainer) archivesContainer.innerHTML = '';
 
       if (!appData.matchs || appData.matchs.length === 0) {
         container.innerHTML = `
@@ -871,68 +894,72 @@
             <p class="text-xs text-slate-400 mt-0.5">Validez le sondage pour planifier une partie !</p>
           </div>
         `;
+        if (archivesContainer) {
+          archivesContainer.innerHTML = `<p class="text-xs text-slate-400 italic">Aucun match archivé.</p>`;
+        }
         return;
       }
 
-      const parseMatchDateObj = (m) => {
-        if (m.timestamp) return new Date(m.timestamp);
-        
-        const months = {
-          'janvier': 0, 'février': 1, 'fevrier': 1, 'mars': 2, 'avril': 3, 'mai': 4, 'juin': 5,
-          'juillet': 6, 'août': 7, 'aout': 7, 'septembre': 8, 'octobre': 9, 'novembre': 10, 'décembre': 11, 'decembre': 11
-        };
+      // Helper pour parser la date texte en timestamp
+const parseMatchDate = (m) => {
+  if (m.timestamp) return m.timestamp;
+  
+  const months = {
+    'janvier': 0, 'février': 1, 'fevrier': 1, 'mars': 2, 'avril': 3, 'mai': 4, 'juin': 5,
+    'juillet': 6, 'août': 7, 'aout': 7, 'septembre': 8, 'octobre': 9, 'novembre': 10, 'décembre': 11, 'decembre': 11
+  };
 
-        const str = (m.dateDisplay || '').toLowerCase();
-        const now = new Date();
+  const str = (m.dateDisplay || '').toLowerCase();
+  const now = new Date();
 
-        if (str.includes("aujourd'hui") || str.includes('ce soir')) return now;
-        if (str.includes('demain')) return new Date(now.getTime() + 86400000);
-        if (str.includes('prochain')) return new Date(now.getTime() + 86400000 * 3);
+  if (str.includes('aujourd\'hui') || str.includes('ce soir')) return now.getTime();
+  if (str.includes('demain')) return now.getTime() + 86400000;
 
-        const dayMatch = str.match(/\d+/);
-        const day = dayMatch ? parseInt(dayMatch[0]) : now.getDate();
-        
-        let month = now.getMonth();
-        for (const [key, val] of Object.entries(months)) {
-          if (str.includes(key)) {
-            month = val;
-            break;
-          }
-        }
+  const dayMatch = str.match(/\d+/);
+  const day = dayMatch ? parseInt(dayMatch[0]) : now.getDate();
+  
+  let month = now.getMonth();
+  for (const [key, val] of Object.entries(months)) {
+    if (str.includes(key)) {
+      month = val;
+      break;
+    }
+  }
 
-        let hours = 20, minutes = 0;
-        if (m.timeDisplay) {
-          const timeMatch = m.timeDisplay.match(/(\d+)h?(\d*)/i);
-          if (timeMatch) {
-            hours = parseInt(timeMatch[1]) || 20;
-            minutes = parseInt(timeMatch[2]) || 0;
-          }
-        }
+  let hours = 20, minutes = 0;
+  if (m.timeDisplay) {
+    const timeMatch = m.timeDisplay.match(/(\d+)h?(\d*)/i);
+    if (timeMatch) {
+      hours = parseInt(timeMatch[1]) || 20;
+      minutes = parseInt(timeMatch[2]) || 0;
+    }
+  }
 
-        let year = now.getFullYear();
-        if (month < now.getMonth() || (month === now.getMonth() && day < now.getDate())) {
-          year++;
-        }
+  // Si une année est stockée sur l'objet match, on l'utilise, sinon l'année en cours
+  let year = m.year || now.getFullYear();
 
-        return new Date(year, month, day, hours, minutes);
-      };
+  return new Date(year, month, day, hours, minutes).getTime();
+};
+      const nowTs = Date.now();
+      const upcomingMatchs = [];
+      const pastMatchs = [];
 
-      const now = new Date();
-      const matchAvenir = [];
-      const matchPasses = [];
-
+      // Séparation des matchs à venir et des matchs passés
       appData.matchs.forEach(m => {
-        const d = parseMatchDateObj(m);
-        if (d < now) {
-          matchPasses.push({ match: m, dateObj: d });
+        const mTime = parseMatchDate(m);
+        m._calculatedTs = mTime;
+        if (mTime < nowTs) {
+          pastMatchs.push(m);
         } else {
-          matchAvenir.push({ match: m, dateObj: d });
+          upcomingMatchs.push(m);
         }
       });
 
-      matchAvenir.sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
+      // Tri chronologique des prochains matchs
+      upcomingMatchs.sort((a, b) => a._calculatedTs - b._calculatedTs);
 
-      if (matchAvenir.length === 0) {
+      // Affichage des matchs à venir
+      if (upcomingMatchs.length === 0) {
         container.innerHTML = `
           <div class="bg-white rounded-2xl p-6 text-center border border-slate-200">
             <i class="fa-solid fa-calendar-xmark text-slate-300 text-3xl mb-2"></i>
@@ -941,64 +968,64 @@
           </div>
         `;
       } else {
-        matchAvenir.forEach(item => {
-          container.appendChild(createMatchCard(item.match));
+        upcomingMatchs.forEach(match => {
+          container.appendChild(createMatchCardElement(match, false));
         });
       }
 
-      if (matchPasses.length > 0) {
-        matchPasses.sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
+      // Traitement et affichage des archives (classés par dossier/mois)
+      if (archivesContainer) {
+        if (pastMatchs.length === 0) {
+          archivesContainer.innerHTML = `<p class="text-xs text-slate-400 italic">Aucun match archivé pour le moment.</p>`;
+        } else {
+          // Trier du plus récent au plus ancien
+          pastMatchs.sort((a, b) => b._calculatedTs - a._calculatedTs);
 
-        const archivesParMois = {};
-        matchPasses.forEach(item => {
-          const moisCle = item.dateObj.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-          const moisFormatted = moisCle.charAt(0).toUpperCase() + moisCle.slice(1);
-          if (!archivesParMois[moisFormatted]) {
-            archivesParMois[moisFormatted] = [];
+          // Groupement par "Mois Année"
+          const groupedByMonth = {};
+          pastMatchs.forEach(m => {
+            const d = new Date(m._calculatedTs);
+            const monthYearKey = d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+            const monthFormatted = monthYearKey.charAt(0).toUpperCase() + monthYearKey.slice(1);
+            
+            if (!groupedByMonth[monthFormatted]) {
+              groupedByMonth[monthFormatted] = [];
+            }
+            groupedByMonth[monthFormatted].push(m);
+          });
+
+          // Rendu des dossiers par mois (Accordéons)
+          let monthIndex = 0;
+          for (const [monthName, matchsInMonth] of Object.entries(groupedByMonth)) {
+            const folderId = `archive-folder-${monthIndex++}`;
+            const folderEl = document.createElement('div');
+            folderEl.className = "bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden";
+
+            folderEl.innerHTML = `
+              <button onclick="toggleArchiveFolder('${folderId}')" class="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition text-left">
+                <div class="flex items-center space-x-2.5">
+                  <i class="fa-solid fa-folder text-amber-500 text-sm"></i>
+                  <span class="font-display font-bold text-xs text-slate-800">${monthName}</span>
+                  <span class="bg-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full">${matchsInMonth.length} match${matchsInMonth.length > 1 ? 's' : ''}</span>
+                </div>
+                <i id="icon-${folderId}" class="fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200"></i>
+              </button>
+              <div id="${folderId}" class="hidden p-3 space-y-3 bg-slate-50/50 border-t border-slate-100"></div>
+            `;
+
+            const folderContent = folderEl.querySelector(`#${folderId}`);
+            matchsInMonth.forEach(m => {
+              folderContent.appendChild(createMatchCardElement(m, true));
+            });
+
+            archivesContainer.appendChild(folderEl);
           }
-          archivesParMois[moisFormatted].push(item.match);
-        });
-
-        const archivesWrapper = document.createElement('div');
-        archivesWrapper.className = 'pt-6 border-t border-slate-200 space-y-3';
-        archivesWrapper.innerHTML = `<h3 class="font-display font-bold text-sm text-slate-700 flex items-center space-x-1.5"><i class="fa-solid fa-box-archive text-slate-400"></i><span>Archives des matchs passés</span></h3>`;
-
-        Object.keys(archivesParMois).forEach(mois => {
-          const folderCard = document.createElement('div');
-          folderCard.className = 'bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden';
-
-          const matchesHTML = archivesParMois[mois].map(m => `
-            <div class="p-3 bg-white rounded-xl border border-slate-100 shadow-sm space-y-1">
-              <div class="flex justify-between items-center text-xs font-bold text-slate-800">
-                <span>⚽ ${m.dateDisplay} - ${m.timeDisplay}</span>
-                <button onclick="deleteMatch('${m.id}')" class="text-slate-300 hover:text-red-500 transition"><i class="fa-solid fa-trash-can text-xs"></i></button>
-              </div>
-              <div class="text-[11px] text-slate-500">Titulaires (${m.titulaires ? m.titulaires.length : 0})</div>
-            </div>
-          `).join('');
-
-          folderCard.innerHTML = `
-            <button onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.chevron-icon').classList.toggle('rotate-180')" class="w-full p-3.5 flex items-center justify-between text-left hover:bg-slate-100/60 transition">
-              <div class="flex items-center space-x-2">
-                <i class="fa-solid fa-folder text-pitch-600"></i>
-                <span class="font-display font-bold text-xs text-slate-800">${mois}</span>
-                <span class="bg-slate-200 text-slate-600 text-[10px] font-bold px-1.5 py-0.2 rounded-full">${archivesParMois[mois].length}</span>
-              </div>
-              <i class="fa-solid fa-chevron-down chevron-icon text-xs text-slate-400 transition-transform duration-200"></i>
-            </button>
-            <div class="p-3 pt-0 space-y-2 hidden">
-              ${matchesHTML}
-            </div>
-          `;
-
-          archivesWrapper.appendChild(folderCard);
-        });
-
-        container.appendChild(archivesWrapper);
+        }
       }
     }
 
-    function createMatchCard(match) {
+    // Helper pour créer l'élément carte de match (réutilisé pour à venir / archivé)
+    function createMatchCardElement(match, isArchived) {
       const player = getCurrentPlayer();
       const myId = player ? player.id : null;
 
@@ -1010,7 +1037,7 @@
       const isReserved = match.reservationStatus === 'RESERVED' || match.isReserved === true;
 
       const card = document.createElement('div');
-      card.className = "bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden";
+      card.className = `bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden ${isArchived ? 'opacity-90' : ''}`;
 
       card.innerHTML = `
         <div class="p-4 space-y-3">
@@ -1019,6 +1046,7 @@
               <div class="flex items-center space-x-2">
                 <span class="font-display font-bold text-slate-900 text-base">${match.dateDisplay}</span>
                 <span class="bg-slate-100 text-slate-700 font-bold text-xs px-2 py-0.5 rounded-lg">${match.timeDisplay}</span>
+                ${isArchived ? '<span class="bg-slate-200 text-slate-600 font-bold text-[10px] px-2 py-0.5 rounded-full">Archivé</span>' : ''}
               </div>
               <div class="mt-1 flex items-center space-x-1.5">
                 ${getStatusBadge(isReserved)}
@@ -1026,9 +1054,11 @@
             </div>
 
             <div class="flex items-center space-x-1">
-              <button onclick="toggleReservation('${match.id}')" class="p-1.5 rounded-lg border text-xs font-semibold transition ${isReserved ? 'bg-pitch-50 border-pitch-200 text-pitch-700 hover:bg-pitch-100' : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-pitch-600 hover:bg-slate-100'}" title="${isReserved ? 'Annuler la réservation' : 'Valider la réservation'}">
-                <i class="fa-solid ${isReserved ? 'fa-circle-check text-pitch-600' : 'fa-calendar-check'}"></i>
-              </button>
+              ${!isArchived ? `
+                <button onclick="toggleReservation('${match.id}')" class="p-1.5 rounded-lg border text-xs font-semibold transition ${isReserved ? 'bg-pitch-50 border-pitch-200 text-pitch-700 hover:bg-pitch-100' : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-pitch-600 hover:bg-slate-100'}" title="${isReserved ? 'Annuler la réservation' : 'Valider la réservation'}">
+                  <i class="fa-solid ${isReserved ? 'fa-circle-check text-pitch-600' : 'fa-calendar-check'}"></i>
+                </button>
+              ` : ''}
               <button onclick="deleteMatch('${match.id}')" class="text-slate-400 hover:text-red-500 p-1.5 transition" title="Supprimer le match">
                 <i class="fa-solid fa-trash-can text-sm"></i>
               </button>
@@ -1081,31 +1111,47 @@
             </div>
           ` : ''}
 
-          <div class="pt-3 border-t border-slate-100 flex flex-col space-y-2">
-            <div class="flex space-x-2">
-              ${!isTitulaire && !isWaiting ? `
-                <button onclick="registerForMatch('${match.id}')" class="flex-1 bg-pitch-600 hover:bg-pitch-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm flex items-center justify-center space-x-1.5">
-                  <i class="fa-solid fa-user-plus"></i>
-                  <span>S'inscrire au match</span>
-                </button>
-              ` : `
-                <button onclick="unregisterFromMatch('${match.id}')" class="flex-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center space-x-1.5">
-                  <i class="fa-solid fa-user-minus"></i>
-                  <span>Se désinscrire (${isTitulaire ? 'Titulaire' : 'En attente'})</span>
-                </button>
-              `}
-            </div>
+          ${!isArchived ? `
+            <div class="pt-3 border-t border-slate-100 flex flex-col space-y-2">
+              <div class="flex space-x-2">
+                ${!isTitulaire && !isWaiting ? `
+                  <button onclick="registerForMatch('${match.id}')" class="flex-1 bg-pitch-600 hover:bg-pitch-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>S'inscrire au match</span>
+                  </button>
+                ` : `
+                  <button onclick="unregisterFromMatch('${match.id}')" class="flex-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-user-minus"></i>
+                    <span>Se désinscrire (${isTitulaire ? 'Titulaire' : 'En attente'})</span>
+                  </button>
+                `}
+              </div>
 
-            ${isTitulaire ? `
-              <button onclick="sendWhatsappReminder('${match.dateDisplay}', '${match.timeDisplay}')" class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold py-2 rounded-xl text-xs flex items-center justify-center space-x-1.5">
-                <i class="fa-brands fa-whatsapp text-sm"></i>
-                <span>Envoyer un rappel WhatsApp</span>
-              </button>
-            ` : ''}
-          </div>
+              ${isTitulaire ? `
+                <button onclick="sendWhatsappReminder('${match.dateDisplay}', '${match.timeDisplay}')" class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold py-2 rounded-xl text-xs flex items-center justify-center space-x-1.5">
+                  <i class="fa-brands fa-whatsapp text-sm"></i>
+                  <span>Envoyer un rappel WhatsApp</span>
+                </button>
+              ` : ''}
+            </div>
+          ` : ''}
+
         </div>
       `;
+
       return card;
+    }
+
+    // Fonction d'ouverture/fermeture des dossiers de mois archivés
+    function toggleArchiveFolder(folderId) {
+      const el = document.getElementById(folderId);
+      const icon = document.getElementById(`icon-${folderId}`);
+      if (el) {
+        el.classList.toggle('hidden');
+        if (icon) {
+          icon.classList.toggle('rotate-180');
+        }
+      }
     }
 
     function getStatusBadge(isReserved) {
@@ -1218,6 +1264,48 @@
     }
 
     // --- TAB BADGES ---
+      // Fonction pour calculer la série de matchs consécutifs passés d'un joueur
+    function calculatePlayerStreak(playerId) {
+      if (!appData.matchs || appData.matchs.length === 0 || !playerId) return 0;
+
+      const nowTs = Date.now();
+      const targetIdStr = String(playerId); // Convertit l'ID cible en texte
+
+      // Recupération et tri des matchs passés du plus récent au plus ancien
+      const pastMatchs = appData.matchs
+        .filter(m => {
+          const matchTs = m._calculatedTs || parseMatchDate(m);
+          return matchTs < nowTs;
+        })
+        .sort((a, b) => {
+          const tsA = a._calculatedTs || parseMatchDate(a);
+          const tsB = b._calculatedTs || parseMatchDate(b);
+          return tsB - tsA;
+        });
+
+      let streak = 0;
+
+      for (const match of pastMatchs) {
+        // Sécurité si 'titulaires' est indéfini
+        const list = match.titulaires || match.joueurs || [];
+
+        // Vérification flexible (gestion string/number et tableaux d'objets)
+        const isTitulaire = list.some(item => {
+          if (typeof item === 'object' && item !== null) {
+            return String(item.id) === targetIdStr;
+          }
+          return String(item) === targetIdStr;
+        });
+
+        if (isTitulaire) {
+          streak++;
+        } else {
+          break; // La série s'arrête dès qu'un match passé est manqué
+        }
+      }
+
+      return streak;
+    }
     function renderBadges() {
       const container = document.getElementById('badgesGrid');
       if (!container) return;
@@ -1227,12 +1315,18 @@
       const streakEl = document.getElementById('streakCountText');
       const flamesEl = document.getElementById('streakFlames');
       if (player) {
-        const streakVal = player.streak || 0;
-        if (streakEl) streakEl.innerText = streakVal;
+        const streakVal = calculatePlayerStreak(player.id);
+        if (streakEl) {
+          streakEl.innerText = streakVal;
+        }
         if (flamesEl) {
-          if (streakVal >= 30) flamesEl.innerText = '🔥🔥🔥';
-          else if (streakVal >= 10) flamesEl.innerText = '🔥🔥';
-          else flamesEl.innerText = '🔥';
+          if (streakVal >= 30) {
+            flamesEl.innerText = '🔥🔥🔥';
+          } else if (streakVal >= 10) {
+            flamesEl.innerText = '🔥🔥';
+          } else {
+            flamesEl.innerText = '🔥';
+          }
         }
       }
 
@@ -1244,7 +1338,7 @@
 
         const card = document.createElement('div');
         card.className = `p-3.5 rounded-2xl border transition ${isUnlocked ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-50 border-slate-200/60 opacity-60'} flex flex-col justify-between space-y-2 relative overflow-hidden group cursor-pointer`;
-        card.title = `${b.title} : ${b.desc}`;
+        card.title = `${b.title} : ${b.desc}`; // Aperçu rapide de la description au survol / appui
 
         card.innerHTML = `
           <div class="flex items-start justify-between">
@@ -1277,6 +1371,7 @@
 
       if (!appData.players) return;
 
+      // Tri des joueurs par nombre de présences (matchs joués) décroissant
       const sortedPlayers = [...appData.players].sort((a, b) => {
         return getPlayerMatchCount(b.id) - getPlayerMatchCount(a.id);
       });
@@ -1309,6 +1404,7 @@
             </div>
           </div>
 
+          <!-- Badges du joueur avec tooltips -->
           <div class="flex flex-wrap gap-1 pt-1 border-t border-slate-100">
             ${playerBadges.length === 0 ? '<span class="text-[10px] text-slate-400 italic">Aucun badge</span>' : ''}
             ${playerBadges.map(bId => {
@@ -1334,17 +1430,20 @@
       }
 
       if (confirm("Êtes-vous sûr de vouloir supprimer définitivement ce joueur ?")) {
+        // Retirer des matchs
         if (appData.matchs) {
           appData.matchs.forEach(m => {
             if (m.titulaires) m.titulaires = m.titulaires.filter(id => id !== playerId);
             if (m.waitingList) m.waitingList = m.waitingList.filter(id => id !== playerId);
           });
         }
+        // Retirer des votes sondage
         if (appData.votes) {
           Object.keys(appData.votes).forEach(sKey => {
             appData.votes[sKey] = appData.votes[sKey].filter(id => id !== playerId);
           });
         }
+        // Retirer de la liste
         appData.players = appData.players.filter(p => p.id !== playerId);
 
         if (appData.currentUserId === playerId && appData.players.length > 0) {
@@ -1373,6 +1472,7 @@
           player.waitingListPerMonth = 0;
           player.isIncrevable = false;
 
+          // Retirer des matchs archivés/existants s'il y a lieu pour réinitialiser son compteur
           if (appData.matchs) {
             appData.matchs.forEach(m => {
               if (m.titulaires) m.titulaires = m.titulaires.filter(id => id !== playerId);
@@ -1406,7 +1506,7 @@
           id: 'p_' + Date.now(),
           name: name,
           avatar: avatarBase64,
-          createdAt: Date.now(),
+          createdAt: Date.now(), // Date de création pour calculer l'ancienneté (2 mois minimum)
           streak: 0,
           unsubscribesPerMonth: 0,
           waitingListPerMonth: 0,
