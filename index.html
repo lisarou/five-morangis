@@ -1573,5 +1573,27 @@ const parseMatchDate = (m) => {
       }, 2500);
     }
   </script>
+  <!-- Script pour connecter Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+  // Connexion à Supabase
+  const SUPABASE_URL = 'https://jglkjhsmdhlenxkvdum.supabase.co';
+  const SUPABASE_KEY = 'TA_CLE_ANON_ICI'; // <-- Remplace par ta clé "anon" Supabase
+  const supabase = supabasejs.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // Écoute en direct des changements
+  supabase
+    .channel('sondages-en-direct')
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'sondages' },
+      (payload) => {
+        console.log('Nouveau sondage :', payload.new);
+        // Code pour l'afficher sur ton écran
+      }
+    )
+    .subscribe();
+</script>
 </body>
 </html>
