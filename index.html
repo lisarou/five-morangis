@@ -76,9 +76,7 @@
           <div class="px-3 py-1.5 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
             Changer de joueur
           </div>
-          <div id="playersListDropdown" class="max-h-48 overflow-y-auto py-1">
-            <!-- Injecté en JS -->
-          </div>
+          <div id="playersListDropdown" class="max-h-48 overflow-y-auto py-1"></div>
           <div class="border-t border-slate-100 p-1 space-y-0.5">
             <button onclick="triggerAvatarUpload()" class="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 font-semibold rounded-lg flex items-center space-x-2">
               <i class="fa-solid fa-camera text-xs text-pitch-600"></i>
@@ -120,7 +118,7 @@
   <!-- Main Content Area -->
   <main class="flex-1 p-4 pb-20 overflow-y-auto space-y-4">
 
-    <!-- TAB 1: MATCHS VALIDÉS & ARCHIVES -->
+    <!-- TAB 1: MATCHS -->
     <section id="content-matchs" class="space-y-4">
       <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
         <div>
@@ -133,9 +131,7 @@
         </button>
       </div>
 
-      <div id="matchsListContainer" class="space-y-3">
-        <!-- Injecté par JS -->
-      </div>
+      <div id="matchsListContainer" class="space-y-3"></div>
 
       <!-- Section Archives -->
       <div class="pt-4 border-t border-slate-200 space-y-3">
@@ -146,9 +142,7 @@
           </h3>
           <span class="text-[11px] text-slate-400">Classés par mois</span>
         </div>
-        <div id="archivesContainer" class="space-y-2">
-          <!-- Injecté par JS -->
-        </div>
+        <div id="archivesContainer" class="space-y-2"></div>
       </div>
     </section>
 
@@ -165,7 +159,6 @@
         <i class="fa-solid fa-futbol absolute -bottom-4 -right-4 text-7xl text-white/5"></i>
       </div>
 
-      <!-- Formulaire Proposer / Créer Sondage -->
       <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
         <h3 class="font-display text-sm font-bold text-slate-800 flex items-center justify-between">
           <span>Proposer ou voter sur un créneau</span>
@@ -175,8 +168,7 @@
           <div class="grid grid-cols-3 gap-2">
             <div>
               <label class="text-[11px] font-bold text-slate-500 uppercase">Jour</label>
-              <select id="voteDate" class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-semibold focus:outline-none focus:border-pitch-500">
-              </select>
+              <select id="voteDate" class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-semibold focus:outline-none focus:border-pitch-500"></select>
             </div>
             <div>
               <label class="text-[11px] font-bold text-slate-500 uppercase">Heure</label>
@@ -215,13 +207,11 @@
           <span class="text-[11px] text-slate-400 font-medium">Mis à jour en direct</span>
         </div>
 
-        <div id="slotsContainer" class="space-y-3">
-          <!-- Injecté par JS -->
-        </div>
+        <div id="slotsContainer" class="space-y-3"></div>
       </div>
     </section>
 
-    <!-- TAB 3: BADGES & TROPHÉES -->
+    <!-- TAB 3: BADGES -->
     <section id="content-badges" class="space-y-4 hidden">
       <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-2">
         <h2 class="font-display font-bold text-base text-slate-800">Badges & Récompenses</h2>
@@ -231,12 +221,10 @@
         </div>
       </div>
 
-      <div id="badgesGrid" class="grid grid-cols-2 gap-3">
-        <!-- Injecté par JS -->
-      </div>
+      <div id="badgesGrid" class="grid grid-cols-2 gap-3"></div>
     </section>
 
-    <!-- TAB 4: JOUEURS & STATS -->
+    <!-- TAB 4: JOUEURS -->
     <section id="content-joueurs" class="space-y-4 hidden">
       <div class="flex items-center justify-between">
         <div>
@@ -249,9 +237,7 @@
         </button>
       </div>
 
-      <div id="playersGrid" class="grid grid-cols-2 gap-2.5">
-        <!-- Injecté par JS -->
-      </div>
+      <div id="playersGrid" class="grid grid-cols-2 gap-2.5"></div>
     </section>
 
   </main>
@@ -285,7 +271,7 @@
     </div>
   </div>
 
-  <!-- Modal Création Directe de Match -->
+  <!-- Modal Création Match -->
   <div id="createMatchModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-2xl max-w-xs w-full p-5 space-y-4 shadow-2xl animate-fade-in">
       <div class="flex items-center justify-between">
@@ -357,46 +343,10 @@
 
     let appData = {
       players: [
-        { 
-          id: 'p1', 
-          name: 'Alex', 
-          avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80', 
-          createdAt: Date.now() - (65 * 24 * 60 * 60 * 1000),
-          streak: 4,
-          unsubscribesPerMonth: 0,
-          waitingListPerMonth: 0,
-          isIncrevable: true
-        },
-        { 
-          id: 'p2', 
-          name: 'Thomas', 
-          avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&auto=format&fit=crop&q=80', 
-          createdAt: Date.now() - (70 * 24 * 60 * 60 * 1000),
-          streak: 1,
-          unsubscribesPerMonth: 1,
-          waitingListPerMonth: 1,
-          isIncrevable: false
-        },
-        { 
-          id: 'p3', 
-          name: 'Romain', 
-          avatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100&auto=format&fit=crop&q=80', 
-          createdAt: Date.now() - (10 * 24 * 60 * 60 * 1000),
-          streak: 0,
-          unsubscribesPerMonth: 0,
-          waitingListPerMonth: 0,
-          isIncrevable: false
-        },
-        { 
-          id: 'p4', 
-          name: 'Maxime', 
-          avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&auto=format&fit=crop&q=80', 
-          createdAt: Date.now() - (80 * 24 * 60 * 60 * 1000),
-          streak: 0,
-          unsubscribesPerMonth: 2,
-          waitingListPerMonth: 0,
-          isIncrevable: false
-        }
+        { id: 'p1', name: 'Alex', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80', createdAt: Date.now() - (65 * 24 * 60 * 60 * 1000), streak: 4, unsubscribesPerMonth: 0, waitingListPerMonth: 0, isIncrevable: true },
+        { id: 'p2', name: 'Thomas', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&auto=format&fit=crop&q=80', createdAt: Date.now() - (70 * 24 * 60 * 60 * 1000), streak: 1, unsubscribesPerMonth: 1, waitingListPerMonth: 1, isIncrevable: false },
+        { id: 'p3', name: 'Romain', avatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100&auto=format&fit=crop&q=80', createdAt: Date.now() - (10 * 24 * 60 * 60 * 1000), streak: 0, unsubscribesPerMonth: 0, waitingListPerMonth: 0, isIncrevable: false },
+        { id: 'p4', name: 'Maxime', avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&auto=format&fit=crop&q=80', createdAt: Date.now() - (80 * 24 * 60 * 60 * 1000), streak: 0, unsubscribesPerMonth: 2, waitingListPerMonth: 0, isIncrevable: false }
       ],
       currentUserId: 'p1',
       votes: {},
@@ -609,7 +559,7 @@
       }
     }
 
-    function validateAndCreateMatch(slotKey) {
+    async function validateAndCreateMatch(slotKey) {
       const voters = (appData.votes && appData.votes[slotKey]) ? appData.votes[slotKey] : [];
       if (voters.length === 0) {
         showToast("Impossible : aucun joueur n'a répondu au sondage.");
@@ -630,32 +580,27 @@
       const titulaires = voters.slice(0, 10);
       const waitingList = voters.slice(10);
 
-      waitingList.forEach(wId => {
-        const p = appData.players.find(x => x.id === wId);
-        if (p) p.waitingListPerMonth = (p.waitingListPerMonth || 0) + 1;
-      });
-
       const newMatch = {
         id: 'match_' + Date.now(),
         timestamp: matchDateObj.getTime(),
-        slotKey: slotKey,
         dateDisplay: formattedDate,
         timeDisplay: timeStr,
         durationDisplay: durationStr,
         titulaires: titulaires,
-        waitingList: waitingList,
-        isReserved: false,
-        reservationStatus: 'NONE'
+        waitingList: waitingList
       };
 
-      if (!appData.matchs) appData.matchs = [];
-      appData.matchs.push(newMatch);
+      // Insertion dans Supabase
+      if (window.supabase) {
+        const { error } = await supabase.from('matchs').insert([newMatch]);
+        if (error) console.error("Erreur création match:", error);
+      }
 
       if (appData.votes) delete appData.votes[slotKey];
 
       syncData();
       switchTab('matchs');
-      showToast("Match créé à partir du sondage !");
+      showToast("Match créé et synchronisé !");
     }
 
     function renderVotesSlots() {
@@ -726,7 +671,7 @@
       document.getElementById('createMatchModal').classList.add('hidden');
     }
 
-    function handleCreateMatchSubmit(e) {
+    async function handleCreateMatchSubmit(e) {
       e.preventDefault();
       const dateVal = document.getElementById('customMatchDate').value;
       const timeVal = document.getElementById('customMatchTime').value;
@@ -753,22 +698,24 @@
         timeDisplay: timeVal,
         durationDisplay: durationVal,
         titulaires: [myId],
-        waitingList: [],
-        isReserved: false,
-        reservationStatus: 'NONE'
+        waitingList: []
       };
 
-      if (!appData.matchs) appData.matchs = [];
-      appData.matchs.push(newMatch);
+      // Sauvegarde dans Supabase
+      if (window.supabase) {
+        const { error } = await supabase.from('matchs').insert([newMatch]);
+        if (error) {
+          console.error("Erreur enregistrement Supabase :", error);
+        }
+      }
 
       closeCreateMatchModal();
       syncData();
-      showToast("Match créé manuellement !");
+      showToast("Match créé !");
     }
 
-    // --- HELPER PARSER DATE POUR LES ANCIENS ET NOUVEAUX MATCHS ---
     function parseMatchTimestamp(m) {
-      if (m.timestamp) return m.timestamp;
+      if (m.timestamp) return Number(m.timestamp);
 
       const now = new Date();
       const str = (m.dateDisplay || '').toLowerCase();
@@ -906,7 +853,6 @@
 
       const isTitulaire = myId && match.titulaires.includes(myId);
       const isWaiting = myId && match.waitingList.includes(myId);
-      const isReserved = match.reservationStatus === 'RESERVED' || match.isReserved === true;
 
       const card = document.createElement('div');
       card.className = `bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden ${isArchived ? 'opacity-90' : ''}`;
@@ -920,17 +866,9 @@
                 <span class="bg-slate-100 text-slate-700 font-bold text-xs px-2 py-0.5 rounded-lg">${match.timeDisplay}</span>
                 ${isArchived ? '<span class="bg-slate-200 text-slate-600 font-bold text-[10px] px-2 py-0.5 rounded-full">Archivé</span>' : ''}
               </div>
-              <div class="mt-1 flex items-center space-x-1.5">
-                ${getStatusBadge(isReserved)}
-              </div>
             </div>
 
             <div class="flex items-center space-x-1">
-              ${!isArchived ? `
-                <button onclick="toggleReservation('${match.id}')" class="p-1.5 rounded-lg border text-xs font-semibold transition ${isReserved ? 'bg-pitch-50 border-pitch-200 text-pitch-700 hover:bg-pitch-100' : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-pitch-600 hover:bg-slate-100'}" title="${isReserved ? 'Annuler la réservation' : 'Valider la réservation'}">
-                  <i class="fa-solid ${isReserved ? 'fa-circle-check text-pitch-600' : 'fa-calendar-check'}"></i>
-                </button>
-              ` : ''}
               <button onclick="deleteMatch('${match.id}')" class="text-slate-400 hover:text-red-500 p-1.5 transition" title="Supprimer le match">
                 <i class="fa-solid fa-trash-can text-sm"></i>
               </button>
@@ -1022,32 +960,7 @@
       }
     }
 
-    function getStatusBadge(isReserved) {
-      if (isReserved) {
-        return `<span class="bg-pitch-100 text-pitch-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center space-x-1">
-          <i class="fa-solid fa-check-circle"></i>
-          <span>TERRAIN RÉSERVÉ</span>
-        </span>`;
-      } else {
-        return `<span class="bg-amber-100 text-amber-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
-          ⏳ Non réservé
-        </span>`;
-      }
-    }
-
-    function toggleReservation(matchId) {
-      if (!appData.matchs) return;
-      const match = appData.matchs.find(x => x.id === matchId);
-      if (match) {
-        const isReserved = match.reservationStatus === 'RESERVED' || match.isReserved === true;
-        match.isReserved = !isReserved;
-        match.reservationStatus = !isReserved ? 'RESERVED' : 'NONE';
-        syncData();
-        showToast(!isReserved ? 'Terrain marqué comme réservé !' : 'Réservation annulée.');
-      }
-    }
-
-    function registerForMatch(matchId) {
+    async function registerForMatch(matchId) {
       if (!appData.matchs) return;
       const match = appData.matchs.find(m => m.id === matchId);
       const currentPlayer = getCurrentPlayer();
@@ -1060,14 +973,17 @@
         showToast("Inscrit comme titulaire !");
       } else {
         match.waitingList.push(myId);
-        if (currentPlayer) currentPlayer.waitingListPerMonth = (currentPlayer.waitingListPerMonth || 0) + 1;
         showToast("Match complet, tu es en liste d'attente.");
       }
 
+      // Mise à jour Cloud Supabase
+      if (window.supabase) {
+        await supabase.from('matchs').update({ titulaires: match.titulaires, waitingList: match.waitingList }).eq('id', matchId);
+      }
       syncData();
     }
 
-    function unregisterFromMatch(matchId) {
+    async function unregisterFromMatch(matchId) {
       if (!appData.matchs) return;
       const match = appData.matchs.find(m => m.id === matchId);
       const currentPlayer = getCurrentPlayer();
@@ -1075,32 +991,32 @@
 
       if (!match || !myId) return;
 
-      if (currentPlayer) currentPlayer.unsubscribesPerMonth = (currentPlayer.unsubscribesPerMonth || 0) + 1;
-
       const tituIndex = match.titulaires.indexOf(myId);
       if (tituIndex > -1) {
         match.titulaires.splice(tituIndex, 1);
         if (match.waitingList.length > 0) {
           const firstWaiting = match.waitingList.shift();
           match.titulaires.push(firstWaiting);
-          showToast("Désinscrit. Un joueur en attente passe titulaire !");
-        } else {
-          showToast("Tu t'es désinscrit du match.");
         }
       } else {
         const waitIndex = match.waitingList.indexOf(myId);
-        if (waitIndex > -1) {
-          match.waitingList.splice(waitIndex, 1);
-          showToast("Retiré de la liste d'attente.");
-        }
+        if (waitIndex > -1) match.waitingList.splice(waitIndex, 1);
       }
 
+      // Mise à jour Cloud Supabase
+      if (window.supabase) {
+        await supabase.from('matchs').update({ titulaires: match.titulaires, waitingList: match.waitingList }).eq('id', matchId);
+      }
       syncData();
+      showToast("Mise à jour effectuée.");
     }
 
-    function deleteMatch(matchId) {
+    async function deleteMatch(matchId) {
       if (confirm("Supprimer ce match ?")) {
         if (appData.matchs) appData.matchs = appData.matchs.filter(m => m.id !== matchId);
+        if (window.supabase) {
+          await supabase.from('matchs').delete().eq('id', matchId);
+        }
         syncData();
         showToast("Match supprimé.");
       }
@@ -1125,26 +1041,17 @@
 
     function calculatePlayerStreak(playerId) {
       if (!appData.matchs || appData.matchs.length === 0 || !playerId) return 0;
-
       const nowTs = Date.now();
       const targetIdStr = String(playerId);
 
       const pastMatchs = appData.matchs
-        .filter(m => {
-          const matchTs = m._calculatedTs || parseMatchTimestamp(m);
-          return matchTs < nowTs;
-        })
-        .sort((a, b) => {
-          const tsA = a._calculatedTs || parseMatchTimestamp(a);
-          const tsB = b._calculatedTs || parseMatchTimestamp(b);
-          return tsB - tsA;
-        });
+        .filter(m => (m._calculatedTs || parseMatchTimestamp(m)) < nowTs)
+        .sort((a, b) => (b._calculatedTs || parseMatchTimestamp(b)) - (a._calculatedTs || parseMatchTimestamp(a)));
 
       let streak = 0;
       for (const match of pastMatchs) {
         const list = match.titulaires || [];
-        const isTitulaire = list.some(item => String(item) === targetIdStr);
-        if (isTitulaire) streak++;
+        if (list.some(item => String(item) === targetIdStr)) streak++;
         else break;
       }
       return streak;
@@ -1250,59 +1157,40 @@
 
     function deletePlayer(playerId) {
       const code = prompt("Veuillez entrer le mot de passe pour supprimer ce joueur :");
-      if (code === null) return;
-      if (code !== "opérationsuppression") {
-        showToast("Code incorrect ! Action annulée.");
+      if (code === null || code !== "opérationsuppression") {
+        showToast("Code incorrect ou action annulée.");
         return;
       }
 
-      if (confirm("Êtes-vous sûr de vouloir supprimer définitivement ce joueur ?")) {
+      if (confirm("Supprimer ce joueur ?")) {
         if (appData.matchs) {
           appData.matchs.forEach(m => {
             if (m.titulaires) m.titulaires = m.titulaires.filter(id => id !== playerId);
             if (m.waitingList) m.waitingList = m.waitingList.filter(id => id !== playerId);
           });
         }
-        if (appData.votes) {
-          Object.keys(appData.votes).forEach(sKey => {
-            appData.votes[sKey] = appData.votes[sKey].filter(id => id !== playerId);
-          });
-        }
         appData.players = appData.players.filter(p => p.id !== playerId);
-        if (appData.currentUserId === playerId && appData.players.length > 0) {
-          appData.currentUserId = appData.players[0].id;
-        }
         syncData();
-        showToast("Joueur supprimé avec succès.");
+        showToast("Joueur supprimé.");
       }
     }
 
     function resetPlayer(playerId) {
       const code = prompt("Veuillez entrer le mot de passe pour réinitialiser ce joueur :");
-      if (code === null) return;
-      if (code !== "opérationsuppression") {
-        showToast("Code incorrect ! Action annulée.");
+      if (code === null || code !== "opérationsuppression") {
+        showToast("Code incorrect ou action annulée.");
         return;
       }
 
-      if (confirm("Réinitialiser les statistiques de ce joueur ?")) {
-        const player = appData.players ? appData.players.find(p => p.id === playerId) : null;
-        if (player) {
-          player.createdAt = Date.now();
-          player.streak = 0;
-          player.unsubscribesPerMonth = 0;
-          player.waitingListPerMonth = 0;
-          player.isIncrevable = false;
-
-          if (appData.matchs) {
-            appData.matchs.forEach(m => {
-              if (m.titulaires) m.titulaires = m.titulaires.filter(id => id !== playerId);
-              if (m.waitingList) m.waitingList = m.waitingList.filter(id => id !== playerId);
-            });
-          }
-          syncData();
-          showToast("Statistiques réinitialisées.");
-        }
+      const player = appData.players ? appData.players.find(p => p.id === playerId) : null;
+      if (player) {
+        player.createdAt = Date.now();
+        player.streak = 0;
+        player.unsubscribesPerMonth = 0;
+        player.waitingListPerMonth = 0;
+        player.isIncrevable = false;
+        syncData();
+        showToast("Statistiques réinitialisées.");
       }
     }
 
@@ -1380,20 +1268,32 @@
     }
   </script>
 
-  <!-- Script Supabase -->
+  <!-- Script Supabase avec synchronisation temps réel -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const SUPABASE_URL = 'https://jglkjhsmdhlenxkvdum.supabase.co';
-    const SUPABASE_KEY = 'TA_CLE_ANON_ICI'; // <-- Colle ta clé "anon"
+    const SUPABASE_KEY = 'TA_CLE_ANON_ICI'; // <-- Insère ta vraie clé anon ici !
     const supabase = supabasejs.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    // Charger les matchs Cloud au démarrage
+    async function chargerMatchsSupabase() {
+      const { data, error } = await supabase.from('matchs').select('*');
+      if (data && data.length > 0) {
+        appData.matchs = data;
+        renderAll();
+      }
+    }
+
+    chargerMatchsSupabase();
+
+    // Écoute en direct des ajouts/modifications/suppressions de matchs
     supabase
-      .channel('sondages-en-direct')
+      .channel('matchs-en-direct')
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'sondages' },
-        (payload) => {
-          console.log('Nouveau sondage :', payload.new);
+        { event: '*', schema: 'public', table: 'matchs' },
+        () => {
+          chargerMatchsSupabase();
         }
       )
       .subscribe();
