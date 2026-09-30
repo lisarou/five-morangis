@@ -37,9 +37,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <!-- Supabase CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
     body { font-family: 'Inter', sans-serif; }
@@ -64,7 +61,7 @@
         </div>
       </div>
       
-      <!-- Selecteur de Joueur -->
+      <!-- Selecteur de Joueur / Profil -->
       <div id="currentUserContainer" class="relative">
         <button onclick="toggleUserDropdown()" class="flex items-center space-x-2 bg-pitch-900/60 border border-pitch-700/50 hover:bg-pitch-900 px-2.5 py-1.5 rounded-xl transition">
           <div id="userAvatar" class="w-6 h-6 rounded-full bg-pitch-600 flex items-center justify-center text-xs font-bold overflow-hidden">
@@ -79,7 +76,9 @@
           <div class="px-3 py-1.5 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
             Changer de joueur
           </div>
-          <div id="playersListDropdown" class="max-h-48 overflow-y-auto py-1"></div>
+          <div id="playersListDropdown" class="max-h-48 overflow-y-auto py-1">
+            <!-- Injecté en JS -->
+          </div>
           <div class="border-t border-slate-100 p-1 space-y-0.5">
             <button onclick="triggerAvatarUpload()" class="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 font-semibold rounded-lg flex items-center space-x-2">
               <i class="fa-solid fa-camera text-xs text-pitch-600"></i>
@@ -121,7 +120,7 @@
   <!-- Main Content Area -->
   <main class="flex-1 p-4 pb-20 overflow-y-auto space-y-4">
 
-    <!-- TAB 1: MATCHS -->
+    <!-- TAB 1: MATCHS VALIDÉS & ARCHIVES -->
     <section id="content-matchs" class="space-y-4">
       <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
         <div>
@@ -134,21 +133,26 @@
         </button>
       </div>
 
-      <div id="matchsListContainer" class="space-y-3"></div>
+      <div id="matchsListContainer" class="space-y-3">
+        <!-- Injecté par JS -->
+      </div>
 
-      <!-- Archives -->
+      <!-- Section Archives -->
       <div class="pt-4 border-t border-slate-200 space-y-3">
         <div class="flex items-center justify-between">
           <h3 class="font-display font-bold text-sm text-slate-800 flex items-center space-x-2">
             <i class="fa-solid fa-box-archive text-slate-400"></i>
             <span>Archives des matchs</span>
           </h3>
+          <span class="text-[11px] text-slate-400">Classés par mois</span>
         </div>
-        <div id="archivesContainer" class="space-y-2"></div>
+        <div id="archivesContainer" class="space-y-2">
+          <!-- Injecté par JS -->
+        </div>
       </div>
     </section>
 
-    <!-- TAB 2: SONDAGE -->
+    <!-- TAB 2: SONDAGE DISPONIBILITÉS -->
     <section id="content-sondage" class="space-y-4 hidden">
       <div class="bg-gradient-to-r from-pitch-800 to-pitch-900 text-white rounded-2xl p-4 shadow-sm relative overflow-hidden">
         <div class="relative z-10">
@@ -161,6 +165,7 @@
         <i class="fa-solid fa-futbol absolute -bottom-4 -right-4 text-7xl text-white/5"></i>
       </div>
 
+      <!-- Formulaire Proposer / Créer Sondage -->
       <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
         <h3 class="font-display text-sm font-bold text-slate-800 flex items-center justify-between">
           <span>Proposer ou voter sur un créneau</span>
@@ -170,7 +175,8 @@
           <div class="grid grid-cols-3 gap-2">
             <div>
               <label class="text-[11px] font-bold text-slate-500 uppercase">Jour</label>
-              <select id="voteDate" class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-semibold focus:outline-none focus:border-pitch-500"></select>
+              <select id="voteDate" class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-semibold focus:outline-none focus:border-pitch-500">
+              </select>
             </div>
             <div>
               <label class="text-[11px] font-bold text-slate-500 uppercase">Heure</label>
@@ -209,39 +215,50 @@
           <span class="text-[11px] text-slate-400 font-medium">Mis à jour en direct</span>
         </div>
 
-        <div id="slotsContainer" class="space-y-3"></div>
+        <div id="slotsContainer" class="space-y-3">
+          <!-- Injecté par JS -->
+        </div>
       </div>
     </section>
 
-    <!-- TAB 3: BADGES -->
+    <!-- TAB 3: BADGES & TROPHÉES -->
     <section id="content-badges" class="space-y-4 hidden">
       <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-2">
         <h2 class="font-display font-bold text-base text-slate-800">Badges & Récompenses</h2>
-        <p class="text-xs text-slate-500 mt-0.5">Débloque des trophées selon tes participations et présences.</p>
+        <p class="text-xs text-slate-500 mt-0.5">Débloque des trophées après au moins 2 mois d'utilisation selon tes participations et présences.</p>
+        <div id="currentStreakBanner" class="bg-orange-50 border border-orange-200 text-orange-800 font-bold text-xs p-2.5 rounded-xl flex items-center space-x-2">
+          <span><span id="streakFlames">🔥</span> Série en cours : <strong id="streakCountText">0</strong> match(s) d'affilée sans rater</span>
+        </div>
       </div>
-      <div id="badgesGrid" class="grid grid-cols-2 gap-3"></div>
+
+      <div id="badgesGrid" class="grid grid-cols-2 gap-3">
+        <!-- Injecté par JS -->
+      </div>
     </section>
 
-    <!-- TAB 4: JOUEURS -->
+    <!-- TAB 4: JOUEURS & STATS -->
     <section id="content-joueurs" class="space-y-4 hidden">
       <div class="flex items-center justify-between">
         <div>
           <h2 class="font-display font-bold text-base text-slate-800">Membres de la communauté</h2>
-          <p class="text-xs text-slate-500">Classés par nombre de présences</p>
+          <p class="text-xs text-slate-500">Classés par nombre de présences aux matchs</p>
         </div>
         <button onclick="openAddPlayerModal()" class="bg-pitch-600 hover:bg-pitch-700 text-white text-xs font-bold px-3 py-2 rounded-xl flex items-center space-x-1 shadow-sm">
           <i class="fa-solid fa-plus"></i>
           <span>Ajouter</span>
         </button>
       </div>
-      <div id="playersGrid" class="grid grid-cols-2 gap-2.5"></div>
+
+      <div id="playersGrid" class="grid grid-cols-2 gap-2.5">
+        <!-- Injecté par JS -->
+      </div>
     </section>
 
   </main>
 
-  <!-- Modale Ajout Joueur -->
+  <!-- Modal Ajout Joueur -->
   <div id="addPlayerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-2xl max-w-xs w-full p-5 space-y-4 shadow-2xl">
+    <div class="bg-white rounded-2xl max-w-xs w-full p-5 space-y-4 shadow-2xl animate-fade-in">
       <div class="flex items-center justify-between">
         <h3 class="font-display font-bold text-base text-slate-900">Nouveau Profil</h3>
         <button onclick="closeAddPlayerModal()" class="text-slate-400 hover:text-slate-600">
@@ -255,6 +272,11 @@
           <input type="text" id="newPlayerName" required placeholder="Ex: Lucas, Zizou..." class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-semibold focus:outline-none focus:border-pitch-500">
         </div>
 
+        <div>
+          <label class="text-[11px] font-bold text-slate-500 uppercase">Photo de profil</label>
+          <input type="file" id="newPlayerAvatarFile" accept="image/*" class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs text-slate-600 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-pitch-50 file:text-pitch-700 hover:file:bg-pitch-100">
+        </div>
+
         <div class="pt-2 flex space-x-2">
           <button type="button" onclick="closeAddPlayerModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs">Annuler</button>
           <button type="submit" class="flex-1 bg-pitch-600 hover:bg-pitch-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm">Créer</button>
@@ -263,9 +285,9 @@
     </div>
   </div>
 
-  <!-- Modale Création Match -->
+  <!-- Modal Création Directe de Match -->
   <div id="createMatchModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-2xl max-w-xs w-full p-5 space-y-4 shadow-2xl">
+    <div class="bg-white rounded-2xl max-w-xs w-full p-5 space-y-4 shadow-2xl animate-fade-in">
       <div class="flex items-center justify-between">
         <h3 class="font-display font-bold text-base text-slate-900">Créer un Match</h3>
         <button onclick="closeCreateMatchModal()" class="text-slate-400 hover:text-slate-600">
@@ -321,10 +343,60 @@
   <script>
     const STORAGE_KEY = 'foot5_app_state_v1';
 
+    const BADGES_LIST = [
+      { id: 'b_touriste', icon: '🧳', title: 'Touriste', desc: 'Vient 1 fois par mois, on lui demande son passeport', color: 'text-blue-600 bg-blue-50' },
+      { id: 'b_sncf', icon: '🚌', title: 'Renfort SNCF', desc: 'Vient quand ça l\'arrange, genre 1 fois sur 3', color: 'text-amber-600 bg-amber-50' },
+      { id: 'b_remplacant', icon: '🦵', title: 'Titulaire remplaçant', desc: 'Assez régulier mais pas indéboulonnable, 1 sur 2', color: 'text-indigo-600 bg-indigo-50' },
+      { id: 'b_titulaire', icon: '🎯', title: 'Titulaire', desc: 'Quasi toujours là, on compte sur lui', color: 'text-pitch-600 bg-pitch-50' },
+      { id: 'b_legende', icon: '🏛️', title: 'Légende du terrain', desc: 'Présent à 95% des matchs, statue à ériger (ou presque)', color: 'text-purple-600 bg-purple-50' },
+      { id: 'b_increvable', icon: '🧟', title: 'Increvable', desc: 'Vient même malade, blessé, ou sous la neige', color: 'text-emerald-600 bg-emerald-50' },
+      { id: 'b_ovni', icon: '🛸', title: 'OVNI', desc: 'Aperçu une fois, présent moins d\'une fois par mois, jamais confirmé scientifiquement', color: 'text-gray-600 bg-gray-100' },
+      { id: 'b_girouette', icon: '💨', title: 'Girouette', desc: 'Pour celui qui se désinscrit au moins une fois par mois', color: 'text-rose-600 bg-rose-50' },
+      { id: 'b_retardataire', icon: '⏳', title: 'Toujours à la bourre', desc: 'Se retrouve en liste d\'attente au moins 1 fois par mois', color: 'text-orange-600 bg-orange-50' }
+    ];
+
     let appData = {
       players: [
-        { id: 'p1', name: 'Alex', avatar: '', createdAt: Date.now() },
-        { id: 'p2', name: 'Thomas', avatar: '', createdAt: Date.now() }
+        { 
+          id: 'p1', 
+          name: 'Alex', 
+          avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80', 
+          createdAt: Date.now() - (65 * 24 * 60 * 60 * 1000),
+          streak: 4,
+          unsubscribesPerMonth: 0,
+          waitingListPerMonth: 0,
+          isIncrevable: true
+        },
+        { 
+          id: 'p2', 
+          name: 'Thomas', 
+          avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&auto=format&fit=crop&q=80', 
+          createdAt: Date.now() - (70 * 24 * 60 * 60 * 1000),
+          streak: 1,
+          unsubscribesPerMonth: 1,
+          waitingListPerMonth: 1,
+          isIncrevable: false
+        },
+        { 
+          id: 'p3', 
+          name: 'Romain', 
+          avatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100&auto=format&fit=crop&q=80', 
+          createdAt: Date.now() - (10 * 24 * 60 * 60 * 1000),
+          streak: 0,
+          unsubscribesPerMonth: 0,
+          waitingListPerMonth: 0,
+          isIncrevable: false
+        },
+        { 
+          id: 'p4', 
+          name: 'Maxime', 
+          avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&auto=format&fit=crop&q=80', 
+          createdAt: Date.now() - (80 * 24 * 60 * 60 * 1000),
+          streak: 0,
+          unsubscribesPerMonth: 2,
+          waitingListPerMonth: 0,
+          isIncrevable: false
+        }
       ],
       currentUserId: 'p1',
       votes: {},
@@ -355,15 +427,56 @@
 
     function getCurrentPlayer() {
       if (!appData.players || appData.players.length === 0) {
-        return { id: 'p1', name: 'Joueur', avatar: '' };
+        return { id: 'p1', name: 'Joueur', avatar: '', createdAt: Date.now(), streak: 0 };
       }
       return appData.players.find(p => p.id === appData.currentUserId) || appData.players[0];
+    }
+
+    function getPlayerMatchCount(playerId) {
+      if (!appData.matchs) return 0;
+      let count = 0;
+      appData.matchs.forEach(m => {
+        if (m.titulaires && m.titulaires.includes(playerId)) count++;
+      });
+      return count;
+    }
+
+    function getPlayerMonthsActive(player) {
+      if (!player.createdAt) return 0;
+      return (Date.now() - player.createdAt) / (1000 * 60 * 60 * 24 * 30);
+    }
+
+    function calculatePlayerBadges(player) {
+      const months = getPlayerMonthsActive(player);
+      if (months < 2) return [];
+
+      const totalMatchs = appData.matchs ? appData.matchs.length : 0;
+      const matchPlayed = getPlayerMatchCount(player.id);
+
+      const presenceRate = totalMatchs > 0 ? (matchPlayed / totalMatchs) : 0;
+      const presencesPerMonth = months > 0 ? (matchPlayed / months) : 0;
+      
+      const unlockedIds = [];
+      if (presenceRate >= 0.95 && totalMatchs > 0) unlockedIds.push('b_legende');
+      else if (presenceRate >= 0.75 && totalMatchs > 0) unlockedIds.push('b_titulaire');
+      else if (presenceRate >= 0.45 && presenceRate < 0.60) unlockedIds.push('b_remplacant');
+      else if (presenceRate >= 0.25 && presenceRate < 0.40) unlockedIds.push('b_sncf');
+
+      if (presencesPerMonth >= 0.9 && presencesPerMonth <= 1.2) unlockedIds.push('b_touriste');
+      if (presencesPerMonth < 0.8) unlockedIds.push('b_ovni');
+
+      if (player.unsubscribesPerMonth >= 1) unlockedIds.push('b_girouette');
+      if (player.waitingListPerMonth >= 1) unlockedIds.push('b_retardataire');
+      if (player.isIncrevable) unlockedIds.push('b_increvable');
+
+      return unlockedIds;
     }
 
     function renderAll() {
       renderCurrentUser();
       renderVotesSlots();
       renderMatchs();
+      renderBadges();
       renderPlayers();
       updateMatchBadge();
     }
@@ -377,7 +490,6 @@
 
       if (player.avatar) avatarEl.innerHTML = `<img src="${player.avatar}" class="w-full h-full object-cover">`;
       else avatarEl.innerText = player.name ? player.name.charAt(0).toUpperCase() : '?';
-      
       nameEl.innerText = player.name || 'Connexion';
 
       const dropdownContainer = document.getElementById('playersListDropdown');
@@ -417,7 +529,7 @@
         if (player) {
           player.avatar = e.target.result;
           syncData();
-          showToast("Photo mise à jour !");
+          showToast("Photo de profil mise à jour !");
         }
       };
       reader.readAsDataURL(file);
@@ -451,8 +563,8 @@
       const time = document.getElementById('voteTime').value;
       const duration = document.getElementById('voteDuration').value;
       if (!date || !time || !duration) return;
-      
       const slotKey = `${date}_${time}_${duration}`;
+
       if (!appData.votes) appData.votes = {};
       if (!appData.votes[slotKey]) appData.votes[slotKey] = [];
 
@@ -463,7 +575,7 @@
         appData.votes[slotKey].push(currentPlayerId);
         showToast("Sondage créé / Dispo ajoutée !");
       } else {
-        showToast("Tu as déjà répondu présent !");
+        showToast("Tu as déjà répondu présent à ce sondage !");
       }
 
       syncData();
@@ -500,7 +612,7 @@
     function validateAndCreateMatch(slotKey) {
       const voters = (appData.votes && appData.votes[slotKey]) ? appData.votes[slotKey] : [];
       if (voters.length === 0) {
-        showToast("Impossible : aucun joueur n'a répondu.");
+        showToast("Impossible : aucun joueur n'a répondu au sondage.");
         return;
       }
 
@@ -513,16 +625,27 @@
       const [year, month, day] = dateStr.split('-').map(Number);
       const matchDateObj = new Date(year, month - 1, day, hours, minutes);
 
-      const formattedDate = `${day < 10 ? '0' + day : day}/${month < 10 ? '0' + month : month}/${year}`;
+      const formattedDate = matchDateObj.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+
+      const titulaires = voters.slice(0, 10);
+      const waitingList = voters.slice(10);
+
+      waitingList.forEach(wId => {
+        const p = appData.players.find(x => x.id === wId);
+        if (p) p.waitingListPerMonth = (p.waitingListPerMonth || 0) + 1;
+      });
 
       const newMatch = {
         id: 'match_' + Date.now(),
         timestamp: matchDateObj.getTime(),
+        slotKey: slotKey,
         dateDisplay: formattedDate,
         timeDisplay: timeStr,
         durationDisplay: durationStr,
-        titulaires: voters.slice(0, 10),
-        waitingList: voters.slice(10)
+        titulaires: titulaires,
+        waitingList: waitingList,
+        isReserved: false,
+        reservationStatus: 'NONE'
       };
 
       if (!appData.matchs) appData.matchs = [];
@@ -532,7 +655,7 @@
 
       syncData();
       switchTab('matchs');
-      showToast("Match créé !");
+      showToast("Match créé à partir du sondage !");
     }
 
     function renderVotesSlots() {
@@ -605,7 +728,6 @@
 
     function handleCreateMatchSubmit(e) {
       e.preventDefault();
-      
       const dateVal = document.getElementById('customMatchDate').value;
       const timeVal = document.getElementById('customMatchTime').value;
       const durationVal = document.getElementById('customMatchDuration').value;
@@ -619,7 +741,7 @@
       const [year, month, day] = dateVal.split('-').map(Number);
       const matchDateObj = new Date(year, month - 1, day, hours, minutes);
 
-      const formattedDate = `${day < 10 ? '0' + day : day}/${month < 10 ? '0' + month : month}/${year}`;
+      const formattedDate = matchDateObj.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
 
       const currentPlayer = getCurrentPlayer();
       const myId = currentPlayer ? currentPlayer.id : 'p1';
@@ -631,15 +753,54 @@
         timeDisplay: timeVal,
         durationDisplay: durationVal,
         titulaires: [myId],
-        waitingList: []
+        waitingList: [],
+        isReserved: false,
+        reservationStatus: 'NONE'
       };
 
       if (!appData.matchs) appData.matchs = [];
       appData.matchs.push(newMatch);
 
       closeCreateMatchModal();
-      syncData(); 
-      showToast("Match créé avec succès !");
+      syncData();
+      showToast("Match créé manuellement !");
+    }
+
+    // --- HELPER PARSER DATE POUR LES ANCIENS ET NOUVEAUX MATCHS ---
+    function parseMatchTimestamp(m) {
+      if (m.timestamp) return m.timestamp;
+
+      const now = new Date();
+      const str = (m.dateDisplay || '').toLowerCase();
+
+      const months = {
+        'janv.': 0, 'janvier': 0, 'févr.': 1, 'février': 1, 'fevr.': 1, 'fevrier': 1,
+        'mars': 2, 'avr.': 3, 'avril': 3, 'mai': 4, 'juin': 5,
+        'juil.': 6, 'juillet': 6, 'août': 7, 'aout': 7, 'sept.': 8, 'septembre': 8,
+        'oct.': 9, 'octobre': 9, 'nov.': 10, 'novembre': 10, 'déc.': 11, 'décembre': 11, 'dec.': 11, 'decembre': 11
+      };
+
+      const dayMatch = str.match(/\d+/);
+      const day = dayMatch ? parseInt(dayMatch[0]) : now.getDate();
+
+      let month = now.getMonth();
+      for (const [key, val] of Object.entries(months)) {
+        if (str.includes(key)) {
+          month = val;
+          break;
+        }
+      }
+
+      let hours = 20, minutes = 0;
+      if (m.timeDisplay) {
+        const timeMatch = m.timeDisplay.match(/(\d+)h?(\d*)/i);
+        if (timeMatch) {
+          hours = parseInt(timeMatch[1]) || 20;
+          minutes = parseInt(timeMatch[2]) || 0;
+        }
+      }
+
+      return new Date(now.getFullYear(), month, day, hours, minutes).getTime();
     }
 
     function renderMatchs() {
@@ -654,7 +815,7 @@
           <div class="bg-white rounded-2xl p-6 text-center border border-slate-200">
             <i class="fa-solid fa-calendar-xmark text-slate-300 text-3xl mb-2"></i>
             <p class="text-sm font-bold text-slate-700">Aucun match programmé</p>
-            <p class="text-xs text-slate-400 mt-0.5">Cliquez sur « Créer » pour en ajouter un !</p>
+            <p class="text-xs text-slate-400 mt-0.5">Validez le sondage pour planifier une partie !</p>
           </div>`;
         if (archivesContainer) archivesContainer.innerHTML = `<p class="text-xs text-slate-400 italic">Aucun match archivé.</p>`;
         return;
@@ -665,31 +826,23 @@
       const pastMatchs = [];
 
       appData.matchs.forEach(m => {
-        // Sécurité si un ancien match n'avait pas de timestamp
-        let matchTs = m.timestamp;
-        if (!matchTs && m.dateDisplay) {
-          const parts = m.dateDisplay.split('/');
-          if (parts.length === 3) {
-            matchTs = new Date(parts[2], parts[1] - 1, parts[0]).getTime();
-          }
-        }
-
-        if (matchTs && matchTs < nowTs) {
+        const mTs = parseMatchTimestamp(m);
+        m._calculatedTs = mTs;
+        if (mTs < nowTs) {
           pastMatchs.push(m);
         } else {
           upcomingMatchs.push(m);
         }
       });
 
-      // Tri des matchs à venir
-      upcomingMatchs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+      upcomingMatchs.sort((a, b) => a._calculatedTs - b._calculatedTs);
 
       if (upcomingMatchs.length === 0) {
         container.innerHTML = `
           <div class="bg-white rounded-2xl p-6 text-center border border-slate-200">
             <i class="fa-solid fa-calendar-xmark text-slate-300 text-3xl mb-2"></i>
             <p class="text-sm font-bold text-slate-700">Aucun match à venir</p>
-            <p class="text-xs text-slate-400 mt-0.5">Créez-en un nouveau !</p>
+            <p class="text-xs text-slate-400 mt-0.5">Validez le sondage ou créez un match !</p>
           </div>`;
       } else {
         upcomingMatchs.forEach(match => {
@@ -699,121 +852,263 @@
 
       if (archivesContainer) {
         if (pastMatchs.length === 0) {
-          archivesContainer.innerHTML = `<p class="text-xs text-slate-400 italic">Aucun match archivé.</p>`;
+          archivesContainer.innerHTML = `<p class="text-xs text-slate-400 italic">Aucun match archivé pour le moment.</p>`;
         } else {
-          pastMatchs.forEach(match => {
-            archivesContainer.appendChild(createMatchCardElement(match, true));
+          pastMatchs.sort((a, b) => b._calculatedTs - a._calculatedTs);
+
+          const groupedByMonth = {};
+          pastMatchs.forEach(m => {
+            const d = new Date(m._calculatedTs);
+            const monthYearKey = d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+            const monthFormatted = monthYearKey.charAt(0).toUpperCase() + monthYearKey.slice(1);
+            
+            if (!groupedByMonth[monthFormatted]) {
+              groupedByMonth[monthFormatted] = [];
+            }
+            groupedByMonth[monthFormatted].push(m);
           });
+
+          let monthIndex = 0;
+          for (const [monthName, matchsInMonth] of Object.entries(groupedByMonth)) {
+            const folderId = `archive-folder-${monthIndex++}`;
+            const folderEl = document.createElement('div');
+            folderEl.className = "bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden";
+
+            folderEl.innerHTML = `
+              <button onclick="toggleArchiveFolder('${folderId}')" class="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition text-left">
+                <div class="flex items-center space-x-2.5">
+                  <i class="fa-solid fa-folder text-amber-500 text-sm"></i>
+                  <span class="font-display font-bold text-xs text-slate-800">${monthName}</span>
+                  <span class="bg-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full">${matchsInMonth.length} match${matchsInMonth.length > 1 ? 's' : ''}</span>
+                </div>
+                <i id="icon-${folderId}" class="fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200"></i>
+              </button>
+              <div id="${folderId}" class="hidden p-3 space-y-3 bg-slate-50/50 border-t border-slate-100"></div>
+            `;
+
+            const folderContent = folderEl.querySelector(`#${folderId}`);
+            matchsInMonth.forEach(m => {
+              folderContent.appendChild(createMatchCardElement(m, true));
+            });
+
+            archivesContainer.appendChild(folderEl);
+          }
         }
       }
     }
 
     function createMatchCardElement(match, isArchived) {
-      const myId = getCurrentPlayer() ? getCurrentPlayer().id : null;
+      const player = getCurrentPlayer();
+      const myId = player ? player.id : null;
+
+      if (!match.titulaires) match.titulaires = [];
+      if (!match.waitingList) match.waitingList = [];
+
       const isTitulaire = myId && match.titulaires.includes(myId);
+      const isWaiting = myId && match.waitingList.includes(myId);
+      const isReserved = match.reservationStatus === 'RESERVED' || match.isReserved === true;
 
       const card = document.createElement('div');
-      card.className = `bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3 ${isArchived ? 'opacity-60' : ''}`;
+      card.className = `bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden ${isArchived ? 'opacity-90' : ''}`;
+
       card.innerHTML = `
-        <div class="flex items-start justify-between">
+        <div class="p-4 space-y-3">
+          <div class="flex items-start justify-between">
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="font-display font-bold text-slate-900 text-base">${match.dateDisplay}</span>
+                <span class="bg-slate-100 text-slate-700 font-bold text-xs px-2 py-0.5 rounded-lg">${match.timeDisplay}</span>
+                ${isArchived ? '<span class="bg-slate-200 text-slate-600 font-bold text-[10px] px-2 py-0.5 rounded-full">Archivé</span>' : ''}
+              </div>
+              <div class="mt-1 flex items-center space-x-1.5">
+                ${getStatusBadge(isReserved)}
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-1">
+              ${!isArchived ? `
+                <button onclick="toggleReservation('${match.id}')" class="p-1.5 rounded-lg border text-xs font-semibold transition ${isReserved ? 'bg-pitch-50 border-pitch-200 text-pitch-700 hover:bg-pitch-100' : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-pitch-600 hover:bg-slate-100'}" title="${isReserved ? 'Annuler la réservation' : 'Valider la réservation'}">
+                  <i class="fa-solid ${isReserved ? 'fa-circle-check text-pitch-600' : 'fa-calendar-check'}"></i>
+                </button>
+              ` : ''}
+              <button onclick="deleteMatch('${match.id}')" class="text-slate-400 hover:text-red-500 p-1.5 transition" title="Supprimer le match">
+                <i class="fa-solid fa-trash-can text-sm"></i>
+              </button>
+            </div>
+          </div>
+
           <div>
-            <span class="font-display font-bold text-slate-900 text-base">${match.dateDisplay}</span>
-            <span class="bg-slate-100 text-slate-700 font-bold text-xs px-2 py-0.5 rounded-lg ml-2">${match.timeDisplay}</span>
-            ${isArchived ? '<span class="bg-slate-200 text-slate-600 font-bold text-[10px] px-2 py-0.5 rounded-full ml-1">Archivé</span>' : ''}
+            <div class="flex justify-between text-xs font-bold mb-1">
+              <span class="text-slate-600">Joueurs Inscrits (${match.titulaires.length}/10)</span>
+              <span class="${match.titulaires.length >= 10 ? 'text-pitch-600' : 'text-slate-400'}">
+                ${match.titulaires.length >= 10 ? 'COMPLET' : (10 - match.titulaires.length) + ' place(s) restante(s)'}
+              </span>
+            </div>
+            <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden flex">
+              <div class="bg-pitch-600 h-full transition-all duration-300" style="width: ${(match.titulaires.length / 10) * 100}%"></div>
+            </div>
           </div>
-          <button onclick="deleteMatch('${match.id}')" class="text-slate-400 hover:text-red-500 p-1.5 transition">
-            <i class="fa-solid fa-trash-can text-sm"></i>
-          </button>
-        </div>
 
-        <div class="space-y-1.5 pt-1">
-          <span class="text-[11px] font-bold text-slate-400 uppercase">Joueurs (${match.titulaires.length}/10) :</span>
-          <div class="flex flex-wrap gap-1.5">
-            ${match.titulaires.map(id => {
-              const p = appData.players.find(x => x.id === id);
-              return `<span class="bg-pitch-50 border border-pitch-200 text-pitch-900 font-medium text-xs px-2.5 py-1 rounded-lg">⚽ ${p ? p.name : 'Joueur'}</span>`;
-            }).join('')}
+          <div class="space-y-1.5 pt-1">
+            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Titulaires (10 max) :</span>
+            <div class="flex flex-wrap gap-1.5">
+              ${match.titulaires.length === 0 ? '<span class="text-xs text-slate-400 italic">Personne pour l\'instant</span>' : ''}
+              ${match.titulaires.map(id => {
+                const p = appData.players.find(x => x.id === id);
+                const pName = p ? p.name : 'Inconnu';
+                return `<span class="bg-pitch-50 border border-pitch-200 text-pitch-900 font-medium text-xs px-2.5 py-1 rounded-lg flex items-center space-x-1.5">
+                  ${p && p.avatar ? `<img src="${p.avatar}" class="w-4 h-4 rounded-full object-cover">` : '<span class="text-[10px]">⚽</span>'}
+                  <span>${pName}</span>
+                </span>`;
+              }).join('')}
+            </div>
           </div>
-        </div>
 
-        ${!isArchived ? `
-          <div class="pt-3 border-t border-slate-100 flex space-x-2">
-            ${!isTitulaire ? `
-              <button onclick="registerForMatch('${match.id}')" class="flex-1 bg-pitch-600 hover:bg-pitch-700 text-white font-bold py-2 rounded-xl text-xs">S'inscrire</button>
-            ` : `
-              <button onclick="unregisterFromMatch('${match.id}')" class="flex-1 bg-red-50 text-red-600 border border-red-200 font-bold py-2 rounded-xl text-xs">Se désinscrire</button>
-            `}
-          </div>
-        ` : ''}
+          ${match.waitingList.length > 0 ? `
+            <div class="space-y-1.5 pt-2 border-t border-slate-100">
+              <span class="text-[11px] font-bold text-amber-600 uppercase tracking-wider flex items-center space-x-1">
+                <i class="fa-solid fa-hourglass-half"></i>
+                <span>Liste d'attente (${match.waitingList.length}) :</span>
+              </span>
+              <div class="flex flex-wrap gap-1.5">
+                ${match.waitingList.map((id, index) => {
+                  const p = appData.players.find(x => x.id === id);
+                  const pName = p ? p.name : 'Inconnu';
+                  return `<span class="bg-amber-50 border border-amber-200 text-amber-900 font-medium text-xs px-2 py-0.5 rounded-lg flex items-center space-x-1">
+                    <span>#${index + 1}</span>
+                    <span>${pName}</span>
+                  </span>`;
+                }).join('')}
+              </div>
+            </div>
+          ` : ''}
+
+          ${!isArchived ? `
+            <div class="pt-3 border-t border-slate-100 flex flex-col space-y-2">
+              <div class="flex space-x-2">
+                ${!isTitulaire && !isWaiting ? `
+                  <button onclick="registerForMatch('${match.id}')" class="flex-1 bg-pitch-600 hover:bg-pitch-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>S'inscrire au match</span>
+                  </button>
+                ` : `
+                  <button onclick="unregisterFromMatch('${match.id}')" class="flex-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-user-minus"></i>
+                    <span>Se désinscrire (${isTitulaire ? 'Titulaire' : 'En attente'})</span>
+                  </button>
+                `}
+              </div>
+
+              ${isTitulaire ? `
+                <button onclick="sendWhatsappReminder('${match.dateDisplay}', '${match.timeDisplay}', '${match.durationDisplay || '1h'}')" class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold py-2 rounded-xl text-xs flex items-center justify-center space-x-1.5">
+                  <i class="fa-brands fa-whatsapp text-sm"></i>
+                  <span>Envoyer un rappel WhatsApp</span>
+                </button>
+              ` : ''}
+            </div>
+          ` : ''}
+        </div>
       `;
+
       return card;
     }
 
-    function registerForMatch(matchId) {
-      const match = appData.matchs.find(m => m.id === matchId);
-      const myId = getCurrentPlayer() ? getCurrentPlayer().id : null;
-      if (!match || !myId) return;
-
-      if (!match.titulaires.includes(myId)) {
-        match.titulaires.push(myId);
-        syncData();
-        showToast("Inscrit au match !");
+    function toggleArchiveFolder(folderId) {
+      const el = document.getElementById(folderId);
+      const icon = document.getElementById(`icon-${folderId}`);
+      if (el) {
+        el.classList.toggle('hidden');
+        if (icon) icon.classList.toggle('rotate-180');
       }
     }
 
-    function unregisterFromMatch(matchId) {
+    function getStatusBadge(isReserved) {
+      if (isReserved) {
+        return `<span class="bg-pitch-100 text-pitch-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center space-x-1">
+          <i class="fa-solid fa-check-circle"></i>
+          <span>TERRAIN RÉSERVÉ</span>
+        </span>`;
+      } else {
+        return `<span class="bg-amber-100 text-amber-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+          ⏳ Non réservé
+        </span>`;
+      }
+    }
+
+    function toggleReservation(matchId) {
+      if (!appData.matchs) return;
+      const match = appData.matchs.find(x => x.id === matchId);
+      if (match) {
+        const isReserved = match.reservationStatus === 'RESERVED' || match.isReserved === true;
+        match.isReserved = !isReserved;
+        match.reservationStatus = !isReserved ? 'RESERVED' : 'NONE';
+        syncData();
+        showToast(!isReserved ? 'Terrain marqué comme réservé !' : 'Réservation annulée.');
+      }
+    }
+
+    function registerForMatch(matchId) {
+      if (!appData.matchs) return;
       const match = appData.matchs.find(m => m.id === matchId);
-      const myId = getCurrentPlayer() ? getCurrentPlayer().id : null;
+      const currentPlayer = getCurrentPlayer();
+      const myId = currentPlayer ? currentPlayer.id : null;
+
       if (!match || !myId) return;
 
-      match.titulaires = match.titulaires.filter(id => id !== myId);
+      if (match.titulaires.length < 10) {
+        match.titulaires.push(myId);
+        showToast("Inscrit comme titulaire !");
+      } else {
+        match.waitingList.push(myId);
+        if (currentPlayer) currentPlayer.waitingListPerMonth = (currentPlayer.waitingListPerMonth || 0) + 1;
+        showToast("Match complet, tu es en liste d'attente.");
+      }
+
       syncData();
-      showToast("Désinscrit du match.");
+    }
+
+    function unregisterFromMatch(matchId) {
+      if (!appData.matchs) return;
+      const match = appData.matchs.find(m => m.id === matchId);
+      const currentPlayer = getCurrentPlayer();
+      const myId = currentPlayer ? currentPlayer.id : null;
+
+      if (!match || !myId) return;
+
+      if (currentPlayer) currentPlayer.unsubscribesPerMonth = (currentPlayer.unsubscribesPerMonth || 0) + 1;
+
+      const tituIndex = match.titulaires.indexOf(myId);
+      if (tituIndex > -1) {
+        match.titulaires.splice(tituIndex, 1);
+        if (match.waitingList.length > 0) {
+          const firstWaiting = match.waitingList.shift();
+          match.titulaires.push(firstWaiting);
+          showToast("Désinscrit. Un joueur en attente passe titulaire !");
+        } else {
+          showToast("Tu t'es désinscrit du match.");
+        }
+      } else {
+        const waitIndex = match.waitingList.indexOf(myId);
+        if (waitIndex > -1) {
+          match.waitingList.splice(waitIndex, 1);
+          showToast("Retiré de la liste d'attente.");
+        }
+      }
+
+      syncData();
     }
 
     function deleteMatch(matchId) {
       if (confirm("Supprimer ce match ?")) {
-        appData.matchs = appData.matchs.filter(m => m.id !== matchId);
+        if (appData.matchs) appData.matchs = appData.matchs.filter(m => m.id !== matchId);
         syncData();
         showToast("Match supprimé.");
       }
     }
 
-    function renderPlayers() {
-      const container = document.getElementById('playersGrid');
-      if (!container || !appData.players) return;
-      container.innerHTML = '';
-
-      appData.players.forEach(p => {
-        const card = document.createElement('div');
-        card.className = "bg-white p-3 rounded-2xl border border-slate-200 flex items-center space-x-2.5 shadow-sm";
-        card.innerHTML = `
-          <div class="w-8 h-8 rounded-full bg-pitch-100 text-pitch-800 font-bold flex items-center justify-center text-xs overflow-hidden">
-            ${p.avatar ? `<img src="${p.avatar}" class="w-full h-full object-cover">` : p.name.charAt(0).toUpperCase()}
-          </div>
-          <span class="font-bold text-xs text-slate-800 truncate">${p.name}</span>
-        `;
-        container.appendChild(card);
-      });
-    }
-
-    function openAddPlayerModal() { document.getElementById('addPlayerModal').classList.remove('hidden'); }
-    function closeAddPlayerModal() { document.getElementById('addPlayerModal').classList.add('hidden'); }
-
-    function handleCreatePlayer(e) {
-      e.preventDefault();
-      const name = document.getElementById('newPlayerName').value.trim();
-      if (!name) return;
-
-      const newPlayer = { id: 'p_' + Date.now(), name: name, avatar: '', createdAt: Date.now() };
-      if (!appData.players) appData.players = [];
-      appData.players.push(newPlayer);
-      appData.currentUserId = newPlayer.id;
-
-      document.getElementById('newPlayerName').value = '';
-      closeAddPlayerModal();
-      syncData();
-      showToast(`Bienvenue ${name} !`);
+    function sendWhatsappReminder(date, time, duration) {
+      const text = encodeURIComponent(`⚽ *Rappel Five Morangis* !\nMatch prévu le *${date}* à *${time}* (Durée : ${duration}).\nAdresse : 1 Rue de l'Avenir, 91420 Morangis.\nSoyez à l'heure les gars ! 🔥`);
+      window.open(`https://wa.me/?text=${text}`, '_blank');
     }
 
     function updateMatchBadge() {
@@ -828,6 +1123,231 @@
       }
     }
 
+    function calculatePlayerStreak(playerId) {
+      if (!appData.matchs || appData.matchs.length === 0 || !playerId) return 0;
+
+      const nowTs = Date.now();
+      const targetIdStr = String(playerId);
+
+      const pastMatchs = appData.matchs
+        .filter(m => {
+          const matchTs = m._calculatedTs || parseMatchTimestamp(m);
+          return matchTs < nowTs;
+        })
+        .sort((a, b) => {
+          const tsA = a._calculatedTs || parseMatchTimestamp(a);
+          const tsB = b._calculatedTs || parseMatchTimestamp(b);
+          return tsB - tsA;
+        });
+
+      let streak = 0;
+      for (const match of pastMatchs) {
+        const list = match.titulaires || [];
+        const isTitulaire = list.some(item => String(item) === targetIdStr);
+        if (isTitulaire) streak++;
+        else break;
+      }
+      return streak;
+    }
+
+    function renderBadges() {
+      const container = document.getElementById('badgesGrid');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const player = getCurrentPlayer();
+      const streakEl = document.getElementById('streakCountText');
+      const flamesEl = document.getElementById('streakFlames');
+
+      if (player) {
+        const streakVal = calculatePlayerStreak(player.id);
+        if (streakEl) streakEl.innerText = streakVal;
+        if (flamesEl) {
+          if (streakVal >= 30) flamesEl.innerText = '🔥🔥🔥';
+          else if (streakVal >= 10) flamesEl.innerText = '🔥🔥';
+          else flamesEl.innerText = '🔥';
+        }
+      }
+
+      const unlockedBadges = player ? calculatePlayerBadges(player) : [];
+      const monthsActive = player ? getPlayerMonthsActive(player) : 0;
+
+      BADGES_LIST.forEach(b => {
+        const isUnlocked = unlockedBadges.includes(b.id);
+        const card = document.createElement('div');
+        card.className = `p-3.5 rounded-2xl border transition ${isUnlocked ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-50 border-slate-200/60 opacity-60'} flex flex-col justify-between space-y-2 relative overflow-hidden group cursor-pointer`;
+        card.title = `${b.title} : ${b.desc}`;
+
+        card.innerHTML = `
+          <div class="flex items-start justify-between">
+            <div class="w-9 h-9 rounded-xl ${b.color} flex items-center justify-center text-base font-bold shadow-sm">
+              <span>${b.icon}</span>
+            </div>
+            ${isUnlocked ? '<span class="text-[10px] bg-pitch-100 text-pitch-800 font-extrabold px-1.5 py-0.5 rounded-full">Débloqué</span>' : '<i class="fa-solid fa-lock text-slate-300 text-xs"></i>'}
+          </div>
+          <div>
+            <h4 class="font-display font-bold text-xs text-slate-800">${b.title}</h4>
+            <p class="text-[11px] text-slate-500 mt-1 leading-snug">${b.desc}</p>
+          </div>
+          ${monthsActive < 2 && !isUnlocked ? `
+            <div class="pt-1 border-t border-slate-100/60 text-[9px] text-amber-600 font-semibold flex items-center space-x-1">
+              <i class="fa-solid fa-clock"></i>
+              <span>Requis: 2 mois d'ancienneté</span>
+            </div>
+          ` : ''}
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderPlayers() {
+      const container = document.getElementById('playersGrid');
+      if (!container || !appData.players) return;
+      container.innerHTML = '';
+
+      const sortedPlayers = [...appData.players].sort((a, b) => getPlayerMatchCount(b.id) - getPlayerMatchCount(a.id));
+
+      sortedPlayers.forEach(p => {
+        const playedCount = getPlayerMatchCount(p.id);
+        const playerBadges = calculatePlayerBadges(p);
+        const card = document.createElement('div');
+        card.className = "bg-white p-3 rounded-2xl border border-slate-200 flex flex-col justify-between space-y-2 shadow-sm relative group";
+
+        card.innerHTML = `
+          <div class="flex items-start justify-between">
+            <div class="flex items-center space-x-2.5 min-w-0 flex-1">
+              <div class="w-9 h-9 rounded-full bg-pitch-100 text-pitch-800 font-bold flex items-center justify-center flex-shrink-0 overflow-hidden text-xs">
+                ${p.avatar ? `<img src="${p.avatar}" class="w-full h-full object-cover">` : (p.name ? p.name.charAt(0).toUpperCase() : '?')}
+              </div>
+              <div class="min-w-0 flex-1">
+                <h4 class="font-display font-bold text-xs text-slate-800 truncate">${p.name}</h4>
+                <span class="text-[10px] font-semibold text-pitch-700 block">⚽ ${playedCount} match${playedCount > 1 ? 's' : ''} joué${playedCount > 1 ? 's' : ''}</span>
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-1">
+              <button onclick="resetPlayer('${p.id}')" class="text-slate-300 hover:text-amber-500 p-1 transition" title="Réinitialiser les stats">
+                <i class="fa-solid fa-rotate-right text-[11px]"></i>
+              </button>
+              <button onclick="deletePlayer('${p.id}')" class="text-slate-300 hover:text-red-500 p-1 transition" title="Supprimer le joueur">
+                <i class="fa-solid fa-trash-can text-[11px]"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-1 pt-1 border-t border-slate-100">
+            ${playerBadges.length === 0 ? '<span class="text-[10px] text-slate-400 italic">Aucun badge</span>' : ''}
+            ${playerBadges.map(bId => {
+              const bObj = BADGES_LIST.find(x => x.id === bId);
+              if (!bObj) return '';
+              return `<span title="${bObj.title} :${bObj.desc}" class="cursor-help text-xs p-1 bg-slate-50 border border-slate-200 rounded-lg">${bObj.icon}</span>`;
+            }).join('')}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function deletePlayer(playerId) {
+      const code = prompt("Veuillez entrer le mot de passe pour supprimer ce joueur :");
+      if (code === null) return;
+      if (code !== "opérationsuppression") {
+        showToast("Code incorrect ! Action annulée.");
+        return;
+      }
+
+      if (confirm("Êtes-vous sûr de vouloir supprimer définitivement ce joueur ?")) {
+        if (appData.matchs) {
+          appData.matchs.forEach(m => {
+            if (m.titulaires) m.titulaires = m.titulaires.filter(id => id !== playerId);
+            if (m.waitingList) m.waitingList = m.waitingList.filter(id => id !== playerId);
+          });
+        }
+        if (appData.votes) {
+          Object.keys(appData.votes).forEach(sKey => {
+            appData.votes[sKey] = appData.votes[sKey].filter(id => id !== playerId);
+          });
+        }
+        appData.players = appData.players.filter(p => p.id !== playerId);
+        if (appData.currentUserId === playerId && appData.players.length > 0) {
+          appData.currentUserId = appData.players[0].id;
+        }
+        syncData();
+        showToast("Joueur supprimé avec succès.");
+      }
+    }
+
+    function resetPlayer(playerId) {
+      const code = prompt("Veuillez entrer le mot de passe pour réinitialiser ce joueur :");
+      if (code === null) return;
+      if (code !== "opérationsuppression") {
+        showToast("Code incorrect ! Action annulée.");
+        return;
+      }
+
+      if (confirm("Réinitialiser les statistiques de ce joueur ?")) {
+        const player = appData.players ? appData.players.find(p => p.id === playerId) : null;
+        if (player) {
+          player.createdAt = Date.now();
+          player.streak = 0;
+          player.unsubscribesPerMonth = 0;
+          player.waitingListPerMonth = 0;
+          player.isIncrevable = false;
+
+          if (appData.matchs) {
+            appData.matchs.forEach(m => {
+              if (m.titulaires) m.titulaires = m.titulaires.filter(id => id !== playerId);
+              if (m.waitingList) m.waitingList = m.waitingList.filter(id => id !== playerId);
+            });
+          }
+          syncData();
+          showToast("Statistiques réinitialisées.");
+        }
+      }
+    }
+
+    function openAddPlayerModal() { document.getElementById('addPlayerModal').classList.remove('hidden'); }
+    function closeAddPlayerModal() { document.getElementById('addPlayerModal').classList.add('hidden'); }
+
+    function handleCreatePlayer(e) {
+      e.preventDefault();
+      const name = document.getElementById('newPlayerName').value.trim();
+      const fileInput = document.getElementById('newPlayerAvatarFile');
+      if (!name) return;
+
+      const finishCreation = (avatarBase64 = '') => {
+        const newPlayer = {
+          id: 'p_' + Date.now(),
+          name: name,
+          avatar: avatarBase64,
+          createdAt: Date.now(),
+          streak: 0,
+          unsubscribesPerMonth: 0,
+          waitingListPerMonth: 0,
+          isIncrevable: false
+        };
+
+        if (!appData.players) appData.players = [];
+        appData.players.push(newPlayer);
+        appData.currentUserId = newPlayer.id;
+
+        document.getElementById('newPlayerName').value = '';
+        if (fileInput) fileInput.value = '';
+
+        closeAddPlayerModal();
+        syncData();
+        showToast(`Bienvenue ${name} !`);
+      };
+
+      if (fileInput && fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(evt) { finishCreation(evt.target.result); };
+        reader.readAsDataURL(fileInput.files[0]);
+      } else {
+        finishCreation();
+      }
+    }
+
     function switchTab(tabName) {
       ['matchs', 'sondage', 'badges', 'joueurs'].forEach(t => {
         const content = document.getElementById(`content-${t}`);
@@ -836,9 +1356,11 @@
           if (t === tabName) {
             content.classList.remove('hidden');
             tabBtn.classList.add('border-pitch-600', 'text-pitch-700');
+            tabBtn.classList.remove('border-transparent');
           } else {
             content.classList.add('hidden');
             tabBtn.classList.remove('border-pitch-600', 'text-pitch-700');
+            tabBtn.classList.add('border-transparent');
           }
         }
       });
@@ -858,17 +1380,22 @@
     }
   </script>
 
+  <!-- Script Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // Configuration Supabase
     const SUPABASE_URL = 'https://jglkjhsmdhlenxkvdum.supabase.co';
-    const SUPABASE_KEY = 'TA_CLE_ANON_ICI'; // <-- Pense à remplacer par ta clé 'anon'
+    const SUPABASE_KEY = 'TA_CLE_ANON_ICI'; // <-- Colle ta clé "anon"
     const supabase = supabasejs.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     supabase
       .channel('sondages-en-direct')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'sondages' }, (payload) => {
-        console.log('Nouveau sondage en direct :', payload.new);
-      })
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'sondages' },
+        (payload) => {
+          console.log('Nouveau sondage :', payload.new);
+        }
+      )
       .subscribe();
   </script>
 </body>
