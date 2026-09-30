@@ -79,8 +79,7 @@
           <div class="px-3 py-1.5 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
             Changer de joueur
           </div>
-          <div id="playersListDropdown" class="max-h-48 overflow-y-auto py-1">
-          </div>
+          <div id="playersListDropdown" class="max-h-48 overflow-y-auto py-1"></div>
           <div class="border-t border-slate-100 p-1 space-y-0.5">
             <button onclick="triggerAvatarUpload()" class="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 font-semibold rounded-lg flex items-center space-x-2">
               <i class="fa-solid fa-camera text-xs text-pitch-600"></i>
@@ -122,7 +121,7 @@
   <!-- Main Content Area -->
   <main class="flex-1 p-4 pb-20 overflow-y-auto space-y-4">
 
-    <!-- TAB 1: MATCHS VALIDÉS & ARCHIVES -->
+    <!-- TAB 1: MATCHS -->
     <section id="content-matchs" class="space-y-4">
       <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
         <div>
@@ -136,20 +135,9 @@
       </div>
 
       <div id="matchsListContainer" class="space-y-3"></div>
-
-      <div class="pt-4 border-t border-slate-200 space-y-3">
-        <div class="flex items-center justify-between">
-          <h3 class="font-display font-bold text-sm text-slate-800 flex items-center space-x-2">
-            <i class="fa-solid fa-box-archive text-slate-400"></i>
-            <span>Archives des matchs</span>
-          </h3>
-          <span class="text-[11px] text-slate-400">Classés par mois</span>
-        </div>
-        <div id="archivesContainer" class="space-y-2"></div>
-      </div>
     </section>
 
-    <!-- TAB 2: SONDAGE DISPONIBILITÉS -->
+    <!-- TAB 2: SONDAGE -->
     <section id="content-sondage" class="space-y-4 hidden">
       <div class="bg-gradient-to-r from-pitch-800 to-pitch-900 text-white rounded-2xl p-4 shadow-sm relative overflow-hidden">
         <div class="relative z-10">
@@ -218,12 +206,8 @@
     <section id="content-badges" class="space-y-4 hidden">
       <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-2">
         <h2 class="font-display font-bold text-base text-slate-800">Badges & Récompenses</h2>
-        <p class="text-xs text-slate-500 mt-0.5">Débloque des trophées après au moins 2 mois d'utilisation selon tes participations et présences.</p>
-        <div id="currentStreakBanner" class="bg-orange-50 border border-orange-200 text-orange-800 font-bold text-xs p-2.5 rounded-xl flex items-center space-x-2">
-          <span><span id="streakFlames">🔥</span> Série en cours : <strong id="streakCountText">0</strong> match(s) d'affilée sans rater</span>
-        </div>
+        <p class="text-xs text-slate-500 mt-0.5">Débloque des trophées selon tes participations et présences.</p>
       </div>
-
       <div id="badgesGrid" class="grid grid-cols-2 gap-3"></div>
     </section>
 
@@ -232,51 +216,21 @@
       <div class="flex items-center justify-between">
         <div>
           <h2 class="font-display font-bold text-base text-slate-800">Membres de la communauté</h2>
-          <p class="text-xs text-slate-500">Classés par nombre de présences aux matchs</p>
+          <p class="text-xs text-slate-500">Classés par nombre de présences</p>
         </div>
         <button onclick="openAddPlayerModal()" class="bg-pitch-600 hover:bg-pitch-700 text-white text-xs font-bold px-3 py-2 rounded-xl flex items-center space-x-1 shadow-sm">
           <i class="fa-solid fa-plus"></i>
           <span>Ajouter</span>
         </button>
       </div>
-
       <div id="playersGrid" class="grid grid-cols-2 gap-2.5"></div>
     </section>
 
   </main>
 
-  <!-- Modale Ajout Joueur -->
-  <div id="addPlayerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-2xl max-w-xs w-full p-5 space-y-4 shadow-2xl animate-fade-in">
-      <div class="flex items-center justify-between">
-        <h3 class="font-display font-bold text-base text-slate-900">Nouveau Profil</h3>
-        <button onclick="closeAddPlayerModal()" class="text-slate-400 hover:text-slate-600">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
-
-      <form onsubmit="handleCreatePlayer(event)" class="space-y-3">
-        <div>
-          <label class="text-[11px] font-bold text-slate-500 uppercase">Nom / Pseudo</label>
-          <input type="text" id="newPlayerName" required placeholder="Ex: Lucas, Zizou..." class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-semibold focus:outline-none focus:border-pitch-500">
-        </div>
-
-        <div>
-          <label class="text-[11px] font-bold text-slate-500 uppercase">Photo de profil</label>
-          <input type="file" id="newPlayerAvatarFile" accept="image/*" class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs text-slate-600 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-pitch-50 file:text-pitch-700 hover:file:bg-pitch-100">
-        </div>
-
-        <div class="pt-2 flex space-x-2">
-          <button type="button" onclick="closeAddPlayerModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs">Annuler</button>
-          <button type="submit" class="flex-1 bg-pitch-600 hover:bg-pitch-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm">Créer</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <!-- Modale Création Match -->
   <div id="createMatchModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-2xl max-w-xs w-full p-5 space-y-4 shadow-2xl animate-fade-in">
+    <div class="bg-white rounded-2xl max-w-xs w-full p-5 space-y-4 shadow-2xl">
       <div class="flex items-center justify-between">
         <h3 class="font-display font-bold text-base text-slate-900">Créer un Match</h3>
         <button onclick="closeCreateMatchModal()" class="text-slate-400 hover:text-slate-600">
@@ -332,22 +286,10 @@
   <script>
     const STORAGE_KEY = 'foot5_app_state_v1';
 
-    const BADGES_LIST = [
-      { id: 'b_touriste', icon: '🧳', title: 'Touriste', desc: 'Vient 1 fois par mois, on lui demande son passeport', color: 'text-blue-600 bg-blue-50' },
-      { id: 'b_sncf', icon: '🚌', title: 'Renfort SNCF', desc: 'Vient quand ça l\'arrange, genre 1 fois sur 3', color: 'text-amber-600 bg-amber-50' },
-      { id: 'b_remplacant', icon: '🦵', title: 'Titulaire remplaçant', desc: 'Assez régulier mais pas indéboulonnable, 1 sur 2', color: 'text-indigo-600 bg-indigo-50' },
-      { id: 'b_titulaire', icon: '🎯', title: 'Titulaire', desc: 'Quasi toujours là, on compte sur lui', color: 'text-pitch-600 bg-pitch-50' },
-      { id: 'b_legende', icon: '🏛️', title: 'Légende du terrain', desc: 'Présent à 95% des matchs, statue à ériger (ou presque)', color: 'text-purple-600 bg-purple-50' },
-      { id: 'b_increvable', icon: '🧟', title: 'Increvable', desc: 'Vient même malade, blessé, ou sous la neige', color: 'text-emerald-600 bg-emerald-50' },
-      { id: 'b_ovni', icon: '🛸', title: 'OVNI', desc: 'Aperçu une fois, présent moins d\'une fois par mois, jamais confirmé scientifiquement', color: 'text-gray-600 bg-gray-100' },
-      { id: 'b_girouette', icon: '💨', title: 'Girouette', desc: 'Pour celui qui se désinscrit au moins une fois par mois', color: 'text-rose-600 bg-rose-50' },
-      { id: 'b_retardataire', icon: '⏳', title: 'Toujours à la bourre', desc: 'Se retrouve en liste d\'attente au moins 1 fois par mois', color: 'text-orange-600 bg-orange-50' }
-    ];
-
     let appData = {
       players: [
-        { id: 'p1', name: 'Alex', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80', createdAt: Date.now() - (65 * 24 * 60 * 60 * 1000), streak: 4, unsubscribesPerMonth: 0, waitingListPerMonth: 0, isIncrevable: true },
-        { id: 'p2', name: 'Thomas', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&auto=format&fit=crop&q=80', createdAt: Date.now() - (70 * 24 * 60 * 60 * 1000), streak: 1, unsubscribesPerMonth: 1, waitingListPerMonth: 1, isIncrevable: false }
+        { id: 'p1', name: 'Alex', avatar: '', createdAt: Date.now() },
+        { id: 'p2', name: 'Thomas', avatar: '', createdAt: Date.now() }
       ],
       currentUserId: 'p1',
       votes: {},
@@ -378,56 +320,15 @@
 
     function getCurrentPlayer() {
       if (!appData.players || appData.players.length === 0) {
-        return { id: 'p1', name: 'Joueur', avatar: '', createdAt: Date.now(), streak: 0 };
+        return { id: 'p1', name: 'Joueur', avatar: '' };
       }
       return appData.players.find(p => p.id === appData.currentUserId) || appData.players[0];
-    }
-
-    function getPlayerMatchCount(playerId) {
-      if (!appData.matchs) return 0;
-      let count = 0;
-      appData.matchs.forEach(m => {
-        if (m.titulaires && m.titulaires.includes(playerId)) count++;
-      });
-      return count;
-    }
-
-    function getPlayerMonthsActive(player) {
-      if (!player.createdAt) return 0;
-      return (Date.now() - player.createdAt) / (1000 * 60 * 60 * 24 * 30);
-    }
-
-    function calculatePlayerBadges(player) {
-      const months = getPlayerMonthsActive(player);
-      if (months < 2) return [];
-
-      const totalMatchs = appData.matchs ? appData.matchs.length : 0;
-      const matchPlayed = getPlayerMatchCount(player.id);
-      const presenceRate = totalMatchs > 0 ? (matchPlayed / totalMatchs) : 0;
-      const presencesPerMonth = months > 0 ? (matchPlayed / months) : 0;
-      
-      const unlockedIds = [];
-      if (presenceRate >= 0.95 && totalMatchs > 0) unlockedIds.push('b_legende');
-      else if (presenceRate >= 0.75 && totalMatchs > 0) unlockedIds.push('b_titulaire');
-      else if (presenceRate >= 0.45 && presenceRate < 0.60) unlockedIds.push('b_remplacant');
-      else if (presenceRate >= 0.25 && presenceRate < 0.40) unlockedIds.push('b_sncf');
-
-      if (presencesPerMonth >= 0.9 && presencesPerMonth <= 1.2) unlockedIds.push('b_touriste');
-      if (presencesPerMonth < 0.8) unlockedIds.push('b_ovni');
-
-      if (player.unsubscribesPerMonth >= 1) unlockedIds.push('b_girouette');
-      if (player.waitingListPerMonth >= 1) unlockedIds.push('b_retardataire');
-      if (player.isIncrevable) unlockedIds.push('b_increvable');
-
-      return unlockedIds;
     }
 
     function renderAll() {
       renderCurrentUser();
       renderVotesSlots();
       renderMatchs();
-      renderBadges();
-      renderPlayers();
       updateMatchBadge();
     }
 
@@ -442,48 +343,6 @@
       else avatarEl.innerText = player.name ? player.name.charAt(0).toUpperCase() : '?';
       
       nameEl.innerText = player.name || 'Connexion';
-
-      const dropdownContainer = document.getElementById('playersListDropdown');
-      if (appData.players) {
-        dropdownContainer.innerHTML = appData.players.map(p => `
-          <button onclick="selectUser('${p.id}')" class="w-full text-left px-3 py-1.5 text-xs hover:bg-slate-50 flex items-center justify-between ${p.id === appData.currentUserId ? 'font-bold text-pitch-700 bg-pitch-50/50' : 'text-slate-700'}">
-            <span class="truncate">${p.name}</span>
-            ${p.id === appData.currentUserId ? '<i class="fa-solid fa-check text-[10px] text-pitch-600"></i>' : ''}
-          </button>
-        `).join('');
-      }
-    }
-
-    function selectUser(playerId) {
-      appData.currentUserId = playerId;
-      toggleUserDropdown();
-      syncData();
-      showToast(`Connecté en tant que ${getCurrentPlayer().name}`);
-    }
-
-    function toggleUserDropdown() {
-      document.getElementById('userDropdown').classList.toggle('hidden');
-    }
-
-    function triggerAvatarUpload() {
-      toggleUserDropdown();
-      document.getElementById('avatarFileInput').click();
-    }
-
-    function handleAvatarUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const player = getCurrentPlayer();
-        if (player) {
-          player.avatar = e.target.result;
-          syncData();
-          showToast("Photo de profil mise à jour !");
-        }
-      };
-      reader.readAsDataURL(file);
     }
 
     function initDatesInForm() {
@@ -508,158 +367,6 @@
       }
     }
 
-    function handleVoteSubmit(e) {
-      e.preventDefault();
-      const date = document.getElementById('voteDate').value;
-      const time = document.getElementById('voteTime').value;
-      const duration = document.getElementById('voteDuration').value;
-      if (!date || !time || !duration) return;
-      
-      const slotKey = `${date}_${time}_${duration}`;
-      if (!appData.votes) appData.votes = {};
-      if (!appData.votes[slotKey]) appData.votes[slotKey] = [];
-
-      const currentPlayer = getCurrentPlayer();
-      const currentPlayerId = currentPlayer ? currentPlayer.id : 'p1';
-
-      if (!appData.votes[slotKey].includes(currentPlayerId)) {
-        appData.votes[slotKey].push(currentPlayerId);
-        showToast("Sondage créé / Dispo ajoutée !");
-      } else {
-        showToast("Tu as déjà répondu présent à ce sondage !");
-      }
-
-      syncData();
-    }
-
-    function toggleVote(slotKey) {
-      if (!appData.votes) appData.votes = {};
-      if (!appData.votes[slotKey]) appData.votes[slotKey] = [];
-
-      const currentPlayer = getCurrentPlayer();
-      const currentPlayerId = currentPlayer ? currentPlayer.id : 'p1';
-
-      const index = appData.votes[slotKey].indexOf(currentPlayerId);
-      if (index > -1) {
-        appData.votes[slotKey].splice(index, 1);
-        showToast("Disponibilité retirée");
-      } else {
-        appData.votes[slotKey].push(currentPlayerId);
-        showToast("Disponibilité ajoutée !");
-      }
-
-      if (appData.votes[slotKey].length === 0) delete appData.votes[slotKey];
-      syncData();
-    }
-
-    function deleteSlot(slotKey) {
-      if (confirm("Supprimer ce créneau du sondage ?")) {
-        if (appData.votes && appData.votes[slotKey]) delete appData.votes[slotKey];
-        syncData();
-        showToast("Sondage supprimé.");
-      }
-    }
-
-    function validateAndCreateMatch(slotKey) {
-      const voters = (appData.votes && appData.votes[slotKey]) ? appData.votes[slotKey] : [];
-      if (voters.length === 0) {
-        showToast("Impossible : aucun joueur n'a répondu au sondage.");
-        return;
-      }
-
-      const parts = slotKey.split('_');
-      const dateStr = parts[0];
-      const timeStr = parts[1] || '19:00';
-      const durationStr = parts[2] || '1h';
-      
-      const dateObj = new Date(dateStr);
-      const formattedDate = !isNaN(dateObj.getTime()) ? dateObj.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : dateStr;
-
-      const titulaires = voters.slice(0, 10);
-      const waitingList = voters.slice(10);
-
-      const newMatch = {
-        id: 'match_' + Date.now(),
-        slotKey: slotKey,
-        dateDisplay: formattedDate,
-        timeDisplay: timeStr,
-        durationDisplay: durationStr,
-        titulaires: titulaires,
-        waitingList: waitingList,
-        isReserved: false,
-        reservationStatus: 'NONE'
-      };
-
-      if (!appData.matchs) appData.matchs = [];
-      appData.matchs.push(newMatch);
-
-      if (appData.votes) delete appData.votes[slotKey];
-
-      syncData();
-      switchTab('matchs');
-      showToast("Match créé !");
-    }
-
-    function renderVotesSlots() {
-      const container = document.getElementById('slotsContainer');
-      if (!container) return;
-      container.innerHTML = '';
-
-      const slotKeys = Object.keys(appData.votes || {});
-      if (slotKeys.length === 0) {
-        container.innerHTML = `
-          <div class="bg-white rounded-2xl p-6 text-center border border-slate-200">
-            <i class="fa-solid fa-calendar-minus text-slate-300 text-3xl mb-2"></i>
-            <p class="text-sm font-bold text-slate-700">Aucun créneau proposé</p>
-            <p class="text-xs text-slate-400 mt-0.5">Sois le premier à créer un sondage ci-dessus !</p>
-          </div>`;
-        return;
-      }
-
-      slotKeys.sort().forEach(slotKey => {
-        const voters = appData.votes[slotKey] || [];
-        const count = voters.length;
-        const parts = slotKey.split('_');
-        const dateStr = parts[0];
-        const timeStr = parts[1] || '';
-        const durationStr = parts[2] || '1h';
-
-        const dateObj = new Date(dateStr);
-        const formattedDate = !isNaN(dateObj.getTime()) ? dateObj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : dateStr;
-        const myId = getCurrentPlayer() ? getCurrentPlayer().id : null;
-        const hasVoted = myId && voters.includes(myId);
-
-        const card = document.createElement('div');
-        card.className = "bg-white rounded-2xl border border-slate-200 p-4 space-y-3 shadow-sm relative";
-        card.innerHTML = `
-          <div class="flex items-start justify-between">
-            <div>
-              <div class="flex items-center space-x-2">
-                <span class="font-display font-bold text-slate-900 text-sm capitalize">${formattedDate}</span>
-                <span class="bg-slate-100 text-slate-700 font-bold text-xs px-2 py-0.5 rounded-lg">${timeStr} (${durationStr})</span>
-              </div>
-              <p class="text-xs text-slate-500 mt-0.5">${count} joueur(s) répondu(s)</p>
-            </div>
-            <button onclick="deleteSlot('${slotKey}')" class="text-slate-300 hover:text-red-500 p-1.5 transition">
-              <i class="fa-solid fa-trash-can text-xs"></i>
-            </button>
-          </div>
-
-          <div class="pt-2 flex flex-col space-y-2 border-t border-slate-100">
-            <button onclick="toggleVote('${slotKey}')" class="w-full py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition ${hasVoted ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'}">
-              <i class="fa-solid ${hasVoted ? 'fa-user-minus' : 'fa-user-plus'}"></i>
-              <span>${hasVoted ? 'Retirer ma dispo' : 'Je suis dispo !'}</span>
-            </button>
-            <button onclick="validateAndCreateMatch('${slotKey}')" class="w-full bg-pitch-600 hover:bg-pitch-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm flex items-center justify-center space-x-1.5">
-              <i class="fa-solid fa-check-circle"></i>
-              <span>Valider et créer le match (${count} inscrit${count > 1 ? 's' : ''})</span>
-            </button>
-          </div>
-        `;
-        container.appendChild(card);
-      });
-    }
-
     function openCreateMatchModal() {
       document.getElementById('createMatchModal').classList.remove('hidden');
     }
@@ -670,6 +377,7 @@
 
     function handleCreateMatchSubmit(e) {
       e.preventDefault();
+      
       const dateVal = document.getElementById('customMatchDate').value;
       const timeVal = document.getElementById('customMatchTime').value;
       const durationVal = document.getElementById('customMatchDuration').value;
@@ -679,15 +387,15 @@
         return;
       }
 
-      // Formatage de la date en français
+      // Formatage sécurisé de la date (JJ/MM/AAAA)
       const parts = dateVal.split('-');
       let formattedDate = dateVal;
       if (parts.length === 3) {
-        const d = new Date(parts[0], parts[1] - 1, parts[2]);
-        formattedDate = d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+        formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
       }
 
-      const myId = getCurrentPlayer() ? getCurrentPlayer().id : 'p1';
+      const currentPlayer = getCurrentPlayer();
+      const myId = currentPlayer ? currentPlayer.id : 'p1';
 
       const newMatch = {
         id: 'match_' + Date.now(),
@@ -695,16 +403,17 @@
         timeDisplay: timeVal,
         durationDisplay: durationVal,
         titulaires: [myId],
-        waitingList: [],
-        isReserved: false,
-        reservationStatus: 'NONE'
+        waitingList: []
       };
 
-      if (!appData.matchs) appData.matchs = [];
+      if (!appData.matchs) {
+        appData.matchs = [];
+      }
+
       appData.matchs.push(newMatch);
 
       closeCreateMatchModal();
-      syncData();
+      syncData(); 
       showToast("Match créé avec succès !");
     }
 
@@ -718,7 +427,7 @@
           <div class="bg-white rounded-2xl p-6 text-center border border-slate-200">
             <i class="fa-solid fa-calendar-xmark text-slate-300 text-3xl mb-2"></i>
             <p class="text-sm font-bold text-slate-700">Aucun match programmé</p>
-            <p class="text-xs text-slate-400 mt-0.5">Créez-en un ou validez un sondage !</p>
+            <p class="text-xs text-slate-400 mt-0.5">Cliquez sur « Créer » pour en ajouter un !</p>
           </div>`;
         return;
       }
@@ -733,7 +442,7 @@
       const isTitulaire = myId && match.titulaires.includes(myId);
 
       const card = document.createElement('div');
-      card.className = "bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-4 space-y-3";
+      card.className = "bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3";
       card.innerHTML = `
         <div class="flex items-start justify-between">
           <div>
@@ -796,13 +505,8 @@
       }
     }
 
-    function renderBadges() {}
-    function renderPlayers() {}
+    function renderVotesSlots() {}
     function updateMatchBadge() {}
-
-    function openAddPlayerModal() { document.getElementById('addPlayerModal').classList.remove('hidden'); }
-    function closeAddPlayerModal() { document.getElementById('addPlayerModal').classList.add('hidden'); }
-    function handleCreatePlayer(e) { e.preventDefault(); closeAddPlayerModal(); }
 
     function switchTab(tabName) {
       ['matchs', 'sondage', 'badges', 'joueurs'].forEach(t => {
@@ -835,15 +539,15 @@
   </script>
 
   <script>
-    // Configuration Supabase pour la synchronisation
+    // Configuration Supabase
     const SUPABASE_URL = 'https://jglkjhsmdhlenxkvdum.supabase.co';
-    const SUPABASE_KEY = 'TA_CLE_ANON_ICI'; // <-- Pense à remettre ta clé "anon" ici
+    const SUPABASE_KEY = 'TA_CLE_ANON_ICI'; // <-- Insère ta clé anon ici
     const supabase = supabasejs.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     supabase
       .channel('sondages-en-direct')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'sondages' }, (payload) => {
-        console.log('Nouveau sondage reçu en temps réel !', payload.new);
+        console.log('Nouveau sondage reçu :', payload.new);
       })
       .subscribe();
   </script>
