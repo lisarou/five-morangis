@@ -64,7 +64,7 @@
         </div>
       </div>
       
-      <!-- Selecteur de Joueur / Profil -->
+      <!-- Selecteur de Joueur -->
       <div id="currentUserContainer" class="relative">
         <button onclick="toggleUserDropdown()" class="flex items-center space-x-2 bg-pitch-900/60 border border-pitch-700/50 hover:bg-pitch-900 px-2.5 py-1.5 rounded-xl transition">
           <div id="userAvatar" class="w-6 h-6 rounded-full bg-pitch-600 flex items-center justify-center text-xs font-bold overflow-hidden">
@@ -135,6 +135,17 @@
       </div>
 
       <div id="matchsListContainer" class="space-y-3"></div>
+
+      <!-- Archives -->
+      <div class="pt-4 border-t border-slate-200 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="font-display font-bold text-sm text-slate-800 flex items-center space-x-2">
+            <i class="fa-solid fa-box-archive text-slate-400"></i>
+            <span>Archives des matchs</span>
+          </h3>
+        </div>
+        <div id="archivesContainer" class="space-y-2"></div>
+      </div>
     </section>
 
     <!-- TAB 2: SONDAGE -->
@@ -227,6 +238,30 @@
     </section>
 
   </main>
+
+  <!-- Modale Ajout Joueur -->
+  <div id="addPlayerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-xs w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="font-display font-bold text-base text-slate-900">Nouveau Profil</h3>
+        <button onclick="closeAddPlayerModal()" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleCreatePlayer(event)" class="space-y-3">
+        <div>
+          <label class="text-[11px] font-bold text-slate-500 uppercase">Nom / Pseudo</label>
+          <input type="text" id="newPlayerName" required placeholder="Ex: Lucas, Zizou..." class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-semibold focus:outline-none focus:border-pitch-500">
+        </div>
+
+        <div class="pt-2 flex space-x-2">
+          <button type="button" onclick="closeAddPlayerModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs">Annuler</button>
+          <button type="submit" class="flex-1 bg-pitch-600 hover:bg-pitch-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm">Créer</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- Modale Création Match -->
   <div id="createMatchModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
@@ -329,6 +364,7 @@
       renderCurrentUser();
       renderVotesSlots();
       renderMatchs();
+      renderPlayers();
       updateMatchBadge();
     }
 
@@ -343,6 +379,48 @@
       else avatarEl.innerText = player.name ? player.name.charAt(0).toUpperCase() : '?';
       
       nameEl.innerText = player.name || 'Connexion';
+
+      const dropdownContainer = document.getElementById('playersListDropdown');
+      if (appData.players) {
+        dropdownContainer.innerHTML = appData.players.map(p => `
+          <button onclick="selectUser('${p.id}')" class="w-full text-left px-3 py-1.5 text-xs hover:bg-slate-50 flex items-center justify-between ${p.id === appData.currentUserId ? 'font-bold text-pitch-700 bg-pitch-50/50' : 'text-slate-700'}">
+            <span class="truncate">${p.name}</span>
+            ${p.id === appData.currentUserId ? '<i class="fa-solid fa-check text-[10px] text-pitch-600"></i>' : ''}
+          </button>
+        `).join('');
+      }
+    }
+
+    function selectUser(playerId) {
+      appData.currentUserId = playerId;
+      toggleUserDropdown();
+      syncData();
+      showToast(`Connecté en tant que ${getCurrentPlayer().name}`);
+    }
+
+    function toggleUserDropdown() {
+      document.getElementById('userDropdown').classList.toggle('hidden');
+    }
+
+    function triggerAvatarUpload() {
+      toggleUserDropdown();
+      document.getElementById('avatarFileInput').click();
+    }
+
+    function handleAvatarUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const player = getCurrentPlayer();
+        if (player) {
+          player.avatar = e.target.result;
+          syncData();
+          showToast("Photo mise à jour !");
+        }
+      };
+      reader.readAsDataURL(file);
     }
 
     function initDatesInForm() {
@@ -367,6 +445,156 @@
       }
     }
 
+    function handleVoteSubmit(e) {
+      e.preventDefault();
+      const date = document.getElementById('voteDate').value;
+      const time = document.getElementById('voteTime').value;
+      const duration = document.getElementById('voteDuration').value;
+      if (!date || !time || !duration) return;
+      
+      const slotKey = `${date}_${time}_${duration}`;
+      if (!appData.votes) appData.votes = {};
+      if (!appData.votes[slotKey]) appData.votes[slotKey] = [];
+
+      const currentPlayer = getCurrentPlayer();
+      const currentPlayerId = currentPlayer ? currentPlayer.id : 'p1';
+
+      if (!appData.votes[slotKey].includes(currentPlayerId)) {
+        appData.votes[slotKey].push(currentPlayerId);
+        showToast("Sondage créé / Dispo ajoutée !");
+      } else {
+        showToast("Tu as déjà répondu présent !");
+      }
+
+      syncData();
+    }
+
+    function toggleVote(slotKey) {
+      if (!appData.votes) appData.votes = {};
+      if (!appData.votes[slotKey]) appData.votes[slotKey] = [];
+
+      const currentPlayer = getCurrentPlayer();
+      const currentPlayerId = currentPlayer ? currentPlayer.id : 'p1';
+
+      const index = appData.votes[slotKey].indexOf(currentPlayerId);
+      if (index > -1) {
+        appData.votes[slotKey].splice(index, 1);
+        showToast("Disponibilité retirée");
+      } else {
+        appData.votes[slotKey].push(currentPlayerId);
+        showToast("Disponibilité ajoutée !");
+      }
+
+      if (appData.votes[slotKey].length === 0) delete appData.votes[slotKey];
+      syncData();
+    }
+
+    function deleteSlot(slotKey) {
+      if (confirm("Supprimer ce créneau du sondage ?")) {
+        if (appData.votes && appData.votes[slotKey]) delete appData.votes[slotKey];
+        syncData();
+        showToast("Sondage supprimé.");
+      }
+    }
+
+    function validateAndCreateMatch(slotKey) {
+      const voters = (appData.votes && appData.votes[slotKey]) ? appData.votes[slotKey] : [];
+      if (voters.length === 0) {
+        showToast("Impossible : aucun joueur n'a répondu.");
+        return;
+      }
+
+      const parts = slotKey.split('_');
+      const dateStr = parts[0];
+      const timeStr = parts[1] || '19:00';
+      const durationStr = parts[2] || '1h';
+      
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const matchDateObj = new Date(year, month - 1, day, hours, minutes);
+
+      const formattedDate = `${day < 10 ? '0' + day : day}/${month < 10 ? '0' + month : month}/${year}`;
+
+      const newMatch = {
+        id: 'match_' + Date.now(),
+        timestamp: matchDateObj.getTime(),
+        dateDisplay: formattedDate,
+        timeDisplay: timeStr,
+        durationDisplay: durationStr,
+        titulaires: voters.slice(0, 10),
+        waitingList: voters.slice(10)
+      };
+
+      if (!appData.matchs) appData.matchs = [];
+      appData.matchs.push(newMatch);
+
+      if (appData.votes) delete appData.votes[slotKey];
+
+      syncData();
+      switchTab('matchs');
+      showToast("Match créé !");
+    }
+
+    function renderVotesSlots() {
+      const container = document.getElementById('slotsContainer');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const slotKeys = Object.keys(appData.votes || {});
+      if (slotKeys.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white rounded-2xl p-6 text-center border border-slate-200">
+            <i class="fa-solid fa-calendar-minus text-slate-300 text-3xl mb-2"></i>
+            <p class="text-sm font-bold text-slate-700">Aucun créneau proposé</p>
+            <p class="text-xs text-slate-400 mt-0.5">Sois le premier à créer un sondage ci-dessus !</p>
+          </div>`;
+        return;
+      }
+
+      slotKeys.sort().forEach(slotKey => {
+        const voters = appData.votes[slotKey] || [];
+        const count = voters.length;
+        const parts = slotKey.split('_');
+        const dateStr = parts[0];
+        const timeStr = parts[1] || '';
+        const durationStr = parts[2] || '1h';
+
+        const dateObj = new Date(dateStr);
+        const formattedDate = !isNaN(dateObj.getTime()) ? dateObj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : dateStr;
+        const myId = getCurrentPlayer() ? getCurrentPlayer().id : null;
+        const hasVoted = myId && voters.includes(myId);
+
+        const card = document.createElement('div');
+        card.className = "bg-white rounded-2xl border border-slate-200 p-4 space-y-3 shadow-sm relative";
+        card.innerHTML = `
+          <div class="flex items-start justify-between">
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="font-display font-bold text-slate-900 text-sm capitalize">${formattedDate}</span>
+                <span class="bg-slate-100 text-slate-700 font-bold text-xs px-2 py-0.5 rounded-lg">${timeStr} (${durationStr})</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5">${count} joueur(s) répondu(s)</p>
+            </div>
+            <button onclick="deleteSlot('${slotKey}')" class="text-slate-300 hover:text-red-500 p-1.5 transition">
+              <i class="fa-solid fa-trash-can text-xs"></i>
+            </button>
+          </div>
+
+          <div class="pt-2 flex flex-col space-y-2 border-t border-slate-100">
+            <button onclick="toggleVote('${slotKey}')" class="w-full py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition ${hasVoted ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'}">
+              <i class="fa-solid ${hasVoted ? 'fa-user-minus' : 'fa-user-plus'}"></i>
+              <span>${hasVoted ? 'Retirer ma dispo' : 'Je suis dispo !'}</span>
+            </button>
+            <button onclick="validateAndCreateMatch('${slotKey}')" class="w-full bg-pitch-600 hover:bg-pitch-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm flex items-center justify-center space-x-1.5">
+              <i class="fa-solid fa-check-circle"></i>
+              <span>Valider et créer le match (${count} inscrit${count > 1 ? 's' : ''})</span>
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
     function openCreateMatchModal() {
       document.getElementById('createMatchModal').classList.remove('hidden');
     }
@@ -387,18 +615,18 @@
         return;
       }
 
-      // Formatage sécurisé de la date (JJ/MM/AAAA)
-      const parts = dateVal.split('-');
-      let formattedDate = dateVal;
-      if (parts.length === 3) {
-        formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
-      }
+      const [hours, minutes] = timeVal.split(':').map(Number);
+      const [year, month, day] = dateVal.split('-').map(Number);
+      const matchDateObj = new Date(year, month - 1, day, hours, minutes);
+
+      const formattedDate = `${day < 10 ? '0' + day : day}/${month < 10 ? '0' + month : month}/${year}`;
 
       const currentPlayer = getCurrentPlayer();
       const myId = currentPlayer ? currentPlayer.id : 'p1';
 
       const newMatch = {
         id: 'match_' + Date.now(),
+        timestamp: matchDateObj.getTime(),
         dateDisplay: formattedDate,
         timeDisplay: timeVal,
         durationDisplay: durationVal,
@@ -406,10 +634,7 @@
         waitingList: []
       };
 
-      if (!appData.matchs) {
-        appData.matchs = [];
-      }
-
+      if (!appData.matchs) appData.matchs = [];
       appData.matchs.push(newMatch);
 
       closeCreateMatchModal();
@@ -419,8 +644,10 @@
 
     function renderMatchs() {
       const container = document.getElementById('matchsListContainer');
+      const archivesContainer = document.getElementById('archivesContainer');
       if (!container) return;
       container.innerHTML = '';
+      if (archivesContainer) archivesContainer.innerHTML = '';
 
       if (!appData.matchs || appData.matchs.length === 0) {
         container.innerHTML = `
@@ -429,25 +656,70 @@
             <p class="text-sm font-bold text-slate-700">Aucun match programmé</p>
             <p class="text-xs text-slate-400 mt-0.5">Cliquez sur « Créer » pour en ajouter un !</p>
           </div>`;
+        if (archivesContainer) archivesContainer.innerHTML = `<p class="text-xs text-slate-400 italic">Aucun match archivé.</p>`;
         return;
       }
 
-      appData.matchs.forEach(match => {
-        container.appendChild(createMatchCardElement(match));
+      const nowTs = Date.now();
+      const upcomingMatchs = [];
+      const pastMatchs = [];
+
+      appData.matchs.forEach(m => {
+        // Sécurité si un ancien match n'avait pas de timestamp
+        let matchTs = m.timestamp;
+        if (!matchTs && m.dateDisplay) {
+          const parts = m.dateDisplay.split('/');
+          if (parts.length === 3) {
+            matchTs = new Date(parts[2], parts[1] - 1, parts[0]).getTime();
+          }
+        }
+
+        if (matchTs && matchTs < nowTs) {
+          pastMatchs.push(m);
+        } else {
+          upcomingMatchs.push(m);
+        }
       });
+
+      // Tri des matchs à venir
+      upcomingMatchs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+      if (upcomingMatchs.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white rounded-2xl p-6 text-center border border-slate-200">
+            <i class="fa-solid fa-calendar-xmark text-slate-300 text-3xl mb-2"></i>
+            <p class="text-sm font-bold text-slate-700">Aucun match à venir</p>
+            <p class="text-xs text-slate-400 mt-0.5">Créez-en un nouveau !</p>
+          </div>`;
+      } else {
+        upcomingMatchs.forEach(match => {
+          container.appendChild(createMatchCardElement(match, false));
+        });
+      }
+
+      if (archivesContainer) {
+        if (pastMatchs.length === 0) {
+          archivesContainer.innerHTML = `<p class="text-xs text-slate-400 italic">Aucun match archivé.</p>`;
+        } else {
+          pastMatchs.forEach(match => {
+            archivesContainer.appendChild(createMatchCardElement(match, true));
+          });
+        }
+      }
     }
 
-    function createMatchCardElement(match) {
+    function createMatchCardElement(match, isArchived) {
       const myId = getCurrentPlayer() ? getCurrentPlayer().id : null;
       const isTitulaire = myId && match.titulaires.includes(myId);
 
       const card = document.createElement('div');
-      card.className = "bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3";
+      card.className = `bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3 ${isArchived ? 'opacity-60' : ''}`;
       card.innerHTML = `
         <div class="flex items-start justify-between">
           <div>
             <span class="font-display font-bold text-slate-900 text-base">${match.dateDisplay}</span>
             <span class="bg-slate-100 text-slate-700 font-bold text-xs px-2 py-0.5 rounded-lg ml-2">${match.timeDisplay}</span>
+            ${isArchived ? '<span class="bg-slate-200 text-slate-600 font-bold text-[10px] px-2 py-0.5 rounded-full ml-1">Archivé</span>' : ''}
           </div>
           <button onclick="deleteMatch('${match.id}')" class="text-slate-400 hover:text-red-500 p-1.5 transition">
             <i class="fa-solid fa-trash-can text-sm"></i>
@@ -464,13 +736,15 @@
           </div>
         </div>
 
-        <div class="pt-3 border-t border-slate-100 flex space-x-2">
-          ${!isTitulaire ? `
-            <button onclick="registerForMatch('${match.id}')" class="flex-1 bg-pitch-600 hover:bg-pitch-700 text-white font-bold py-2 rounded-xl text-xs">S'inscrire</button>
-          ` : `
-            <button onclick="unregisterFromMatch('${match.id}')" class="flex-1 bg-red-50 text-red-600 border border-red-200 font-bold py-2 rounded-xl text-xs">Se désinscrire</button>
-          `}
-        </div>
+        ${!isArchived ? `
+          <div class="pt-3 border-t border-slate-100 flex space-x-2">
+            ${!isTitulaire ? `
+              <button onclick="registerForMatch('${match.id}')" class="flex-1 bg-pitch-600 hover:bg-pitch-700 text-white font-bold py-2 rounded-xl text-xs">S'inscrire</button>
+            ` : `
+              <button onclick="unregisterFromMatch('${match.id}')" class="flex-1 bg-red-50 text-red-600 border border-red-200 font-bold py-2 rounded-xl text-xs">Se désinscrire</button>
+            `}
+          </div>
+        ` : ''}
       `;
       return card;
     }
@@ -505,8 +779,54 @@
       }
     }
 
-    function renderVotesSlots() {}
-    function updateMatchBadge() {}
+    function renderPlayers() {
+      const container = document.getElementById('playersGrid');
+      if (!container || !appData.players) return;
+      container.innerHTML = '';
+
+      appData.players.forEach(p => {
+        const card = document.createElement('div');
+        card.className = "bg-white p-3 rounded-2xl border border-slate-200 flex items-center space-x-2.5 shadow-sm";
+        card.innerHTML = `
+          <div class="w-8 h-8 rounded-full bg-pitch-100 text-pitch-800 font-bold flex items-center justify-center text-xs overflow-hidden">
+            ${p.avatar ? `<img src="${p.avatar}" class="w-full h-full object-cover">` : p.name.charAt(0).toUpperCase()}
+          </div>
+          <span class="font-bold text-xs text-slate-800 truncate">${p.name}</span>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function openAddPlayerModal() { document.getElementById('addPlayerModal').classList.remove('hidden'); }
+    function closeAddPlayerModal() { document.getElementById('addPlayerModal').classList.add('hidden'); }
+
+    function handleCreatePlayer(e) {
+      e.preventDefault();
+      const name = document.getElementById('newPlayerName').value.trim();
+      if (!name) return;
+
+      const newPlayer = { id: 'p_' + Date.now(), name: name, avatar: '', createdAt: Date.now() };
+      if (!appData.players) appData.players = [];
+      appData.players.push(newPlayer);
+      appData.currentUserId = newPlayer.id;
+
+      document.getElementById('newPlayerName').value = '';
+      closeAddPlayerModal();
+      syncData();
+      showToast(`Bienvenue ${name} !`);
+    }
+
+    function updateMatchBadge() {
+      const badge = document.getElementById('badgeMatchsCount');
+      if (!badge) return;
+      const count = appData.matchs ? appData.matchs.length : 0;
+      if (count > 0) {
+        badge.innerText = count;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
 
     function switchTab(tabName) {
       ['matchs', 'sondage', 'badges', 'joueurs'].forEach(t => {
@@ -541,13 +861,13 @@
   <script>
     // Configuration Supabase
     const SUPABASE_URL = 'https://jglkjhsmdhlenxkvdum.supabase.co';
-    const SUPABASE_KEY = 'TA_CLE_ANON_ICI'; // <-- Insère ta clé anon ici
+    const SUPABASE_KEY = 'TA_CLE_ANON_ICI'; // <-- Pense à remplacer par ta clé 'anon'
     const supabase = supabasejs.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     supabase
       .channel('sondages-en-direct')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'sondages' }, (payload) => {
-        console.log('Nouveau sondage reçu :', payload.new);
+        console.log('Nouveau sondage en direct :', payload.new);
       })
       .subscribe();
   </script>
